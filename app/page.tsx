@@ -1,89 +1,141 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-//import Image from 'next/image';
+import Navbar from './components/Navbar';
 
 export default function Home() {
-  
   const calculateTimeLeft = () => {
-  const nextNovember = new Date(new Date().getFullYear() + 1, 10, 1);
-  const now = new Date();
-  const difference = nextNovember.getTime() - now.getTime();
+    const nextNovember = new Date(new Date().getFullYear() + 1, 10, 1);
+    const now = new Date();
+    const difference = nextNovember.getTime() - now.getTime();
 
-  let timeLeft = {
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-  };
-
-  if (difference > 0) {
-    timeLeft = {
-    days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-    hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-    minutes: Math.floor((difference / 1000 / 60) % 60),
-    seconds: Math.floor((difference / 1000) % 60),
+    let timeLeft = {
+      days: 0,
+      hours: 0,
+      minutes: 0,
+      seconds: 0,
     };
-  }
 
-  return timeLeft;
+    if (difference > 0) {
+      timeLeft = {
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((difference / 1000 / 60) % 60),
+        seconds: Math.floor((difference / 1000) % 60),
+      };
+    }
+
+    return timeLeft;
   };
 
   const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
 
   useEffect(() => {
-  const timer = setTimeout(() => {
-    setTimeLeft(calculateTimeLeft());
-  }, 1000);
+    const timer = setTimeout(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
 
-  return () => clearTimeout(timer);
+    return () => clearTimeout(timer);
   });
 
   return (
-  <div>
-    <div className="min-h-screen bg-gradient-to-b from-purple-500 to-black">
-    <main className="flex flex-col items-center justify-center min-h-screen p-4">
-      <div className="flex flex-col items-center justify-center gap-8">
-      <div className="flex flex-wrap justify-center space-x-8 lg:space-x-56">
-        <div className="flex flex-col items-center relative">
-        <div className="text-white text-[8rem] lg:text-[18rem] glow-effect font-alfa-slab">
-          {timeLeft.days}
-        </div>
-        <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-black text-2xl lg:text-4xl font-roboto-mono font-bold tracking-ultra-wide">DAYS</span>
-        </div>
-        <div className="flex flex-col items-center relative">
-        <div className="text-white text-[8rem] lg:text-[18rem] glow-effect font-alfa-slab">
-          {timeLeft.hours}
-        </div>
-        <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-black text-2xl lg:text-4xl font-roboto-mono font-bold tracking-ultra-wide">HOURS</span>
-        </div>
-        <div className="flex flex-col items-center relative">
-        <div className="text-white text-[8rem] lg:text-[18rem] glow-effect font-alfa-slab">
-          {timeLeft.minutes}
-        </div>
-        <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-black text-2xl lg:text-4xl font-roboto-mono font-bold tracking-ultra-wide">MINUTES</span>
-        </div>
-        <div className="flex flex-col items-center relative">
-        <div className="text-white text-[8rem] lg:text-[18rem] glow-effect font-alfa-slab">
-          {timeLeft.seconds}
-        </div>
-        <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-black text-2xl lg:text-4xl font-roboto-mono font-bold tracking-ultra-wide">SECONDS</span>
-        </div>
+    <div className="relative">
+      <Navbar />
+      <div className="fixed inset-0 bg-[#2b1055] perspective-grid" />
+      
+      <div className="min-h-screen bg-gradient-to-b from-[#2b1055] via-[#7597de] to-[#ff2975] relative overflow-hidden">
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-t from-[#ff2975] to-[#ff8a2c] rounded-t-full opacity-30" />
+        
+        <main className="flex flex-col items-center justify-center min-h-screen p-4 relative">
+          <div className="flex flex-col items-center justify-center gap-4 md:gap-8">
+            <div className="grid grid-cols-2 md:flex md:flex-row gap-8 md:gap-24 lg:gap-32 xl:gap-40 justify-center relative z-10">
+              <div className="flex flex-col items-center relative w-[160px] sm:w-[200px] md:w-[240px] lg:w-[300px]">
+                <div className="text-white text-[4rem] sm:text-[6rem] md:text-[8rem] lg:text-[12rem] xl:text-[18rem] glow-effect font-alfa-slab tabular-nums w-full flex justify-center">
+                  <span className="inline-block min-w-[1.5em] text-center">
+                    {timeLeft.days}
+                  </span>
+                </div>
+                <span className="absolute bottom-0 text-white text-lg sm:text-xl md:text-2xl lg:text-4xl font-roboto-mono font-bold tracking-ultra-wide opacity-60">
+                  DAYS
+                </span>
+              </div>
+
+              <div className="flex flex-col items-center relative w-[160px] sm:w-[200px] md:w-[240px] lg:w-[300px]">
+                <div className="text-white text-[4rem] sm:text-[6rem] md:text-[8rem] lg:text-[12rem] xl:text-[18rem] glow-effect font-alfa-slab tabular-nums w-full flex justify-center">
+                  <span className="inline-block min-w-[1.5em] text-center">
+                    {timeLeft.hours}
+                  </span>
+                </div>
+                <span className="absolute bottom-0 text-white text-lg sm:text-xl md:text-2xl lg:text-4xl font-roboto-mono font-bold tracking-ultra-wide opacity-60">
+                  HOURS
+                </span>
+              </div>
+
+              <div className="flex flex-col items-center relative w-[160px] sm:w-[200px] md:w-[240px] lg:w-[300px]">
+                <div className="text-white text-[4rem] sm:text-[6rem] md:text-[8rem] lg:text-[12rem] xl:text-[18rem] glow-effect font-alfa-slab tabular-nums w-full flex justify-center">
+                  <span className="inline-block min-w-[1.5em] text-center">
+                    {timeLeft.minutes}
+                  </span>
+                </div>
+                <span className="absolute bottom-0 text-white text-lg sm:text-xl md:text-2xl lg:text-4xl font-roboto-mono font-bold tracking-ultra-wide opacity-60">
+                  MINUTES
+                </span>
+              </div>
+
+              <div className="flex flex-col items-center relative w-[160px] sm:w-[200px] md:w-[240px] lg:w-[300px]">
+                <div className="text-white text-[4rem] sm:text-[6rem] md:text-[8rem] lg:text-[12rem] xl:text-[18rem] glow-effect font-alfa-slab tabular-nums w-full flex justify-center">
+                  <span className="inline-block min-w-[1.5em] text-center">
+                    {timeLeft.seconds}
+                  </span>
+                </div>
+                <span className="absolute bottom-0 text-white text-lg sm:text-xl md:text-2xl lg:text-4xl font-roboto-mono font-bold tracking-ultra-wide opacity-60">
+                  SECONDS
+                </span>
+              </div>
+            </div>
+
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-9xl text-center font-tilt-neon mt-8 md:mt-16 text-white glow-effect-cyan">
+              GAMING NOVEMBER
+            </h1>
+          </div>
+        </main>
       </div>
-      <div className="flex flex-col items-center">
-      </div>
-      <h1 className="text-6xl lg:text-9xl font-bold font-roboto-mono bg-clip-text text-transparent bg-gradient-to-r from-white to-purple-500">GAMING NOVEMBER</h1>
-      </div>
-    </main>
+      <style jsx global>{`
+        .perspective-grid {
+          background-image: linear-gradient(transparent 95%, #ff2975 95%),
+                            linear-gradient(90deg, transparent 95%, #ff2975 95%);
+          background-size: 40px 40px;
+          transform: perspective(500px) rotateX(60deg);
+          transform-origin: bottom;
+          height: 100%;
+          opacity: 0.3;
+        }
+
+        .glow-effect {
+          text-shadow: 0 0 10px #ff8a2c,
+                      0 0 20px #ff8a2c,
+                      0 0 30px #ff2975;
+        }
+
+        @keyframes gridMove {
+          from {
+            background-position: 0 0;
+          }
+          to {
+            background-position: 0 40px;
+          }
+        }
+
+        .perspective-grid {
+          animation: gridMove 1s linear infinite;
+        }
+
+        .glow-effect-cyan {
+          text-shadow: 0 0 10px #00ffff,
+                      0 0 20px #00ffff,
+                      0 0 30px #00ffff;
+        }
+      `}</style>
     </div>
-    <style jsx>{`
-    .glow-effect {
-      text-shadow: 0 0 10px rgba(255, 255, 255, 0.7), 0 0 20px rgba(255, 255, 255, 0.5), 0 0 30px rgba(255, 255, 255, 0.3);
-    }
-    .font-roboto-mono {
-      font-family: 'Roboto Mono', monospace;
-    }
-    `}</style>
-  </div>
   );
 }

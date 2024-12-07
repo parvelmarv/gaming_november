@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { Monoton, Tilt_Neon } from 'next/font/google';
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -11,6 +12,17 @@ const geistMono = localFont({
   src: "./fonts/GeistMonoVF.woff",
   variable: "--font-geist-mono",
   weight: "100 900",
+});
+const monoton = Monoton({
+  weight: '400',
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-monoton',
+});
+const tiltNeon = Tilt_Neon({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-tilt-neon',
 });
 
 export const metadata: Metadata = {
@@ -26,7 +38,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${monoton.variable} ${tiltNeon.variable} antialiased`}
       >
         {children}
       </body>

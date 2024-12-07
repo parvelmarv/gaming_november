@@ -16,10 +16,16 @@ const config: Config = {
       fontFamily: {
         'alfa-slab': ['"Alfa Slab One"', 'serif'],
         'roboto-mono': ['"Roboto Mono"', 'monospace'],
+        'monoton': ['var(--font-monoton)', 'cursive'],
+        'tilt-neon': ['var(--font-tilt-neon)', 'cursive'],
       },
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+      },
+      animation: {
+        celestialRise: 'celestialRise 10s linear infinite',
+        fadeInOut: 'fadeInOut 10s linear infinite',
       },
     },
   },
