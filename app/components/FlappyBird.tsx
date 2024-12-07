@@ -207,7 +207,7 @@ export default function FlappyBird() {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [gameStarted, gameOver, score, highScore]);
+  }, [gameStarted, gameOver, score, highScore, jump]);
 
   return (
     <div className="relative w-full max-w-lg mx-auto">
@@ -238,7 +238,7 @@ export default function FlappyBird() {
   );
 }
 
-function checkCollision(rect1: any, rect2: any) {
+function checkCollision(rect1: Record<string, number>, rect2: Record<string, number>) {
   return (
     rect1.x < rect2.x + rect2.width &&
     rect1.x + rect1.width > rect2.x &&

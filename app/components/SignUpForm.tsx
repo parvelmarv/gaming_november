@@ -29,7 +29,8 @@ export default function SignUpForm() {
       }
 
       router.push('/login');
-    } catch (error) {
+    } catch (err) {
+      console.error(err);
       setError('Something went wrong');
     }
   };

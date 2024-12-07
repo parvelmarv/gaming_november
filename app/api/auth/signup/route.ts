@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
 
 export async function POST(req: Request) {
   try {
@@ -16,7 +15,7 @@ export async function POST(req: Request) {
         name
       }
     });
-  } catch (error) {
+  } catch {
     return new NextResponse('Internal Error', { status: 500 });
   }
 } 

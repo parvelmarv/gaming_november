@@ -22,7 +22,7 @@ export default function Leaderboard() {
     <div className="min-h-screen bg-gradient-to-b from-[#2b1055] via-[#7597de] to-[#ff2975] pt-20">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <h2 className="text-4xl md:text-5xl font-bold text-white text-center mb-12 font-tilt-neon glow-effect-cyan">
-          Last Year's Standings
+          Last Year&apos;s Standings
         </h2>
         <div className="bg-black/30 backdrop-blur-sm rounded-lg overflow-hidden">
           <div className="divide-y divide-purple-500/30">
