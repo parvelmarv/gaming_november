@@ -1,11 +1,8 @@
 import NextAuth from 'next-auth';
-import { PrismaAdapter } from '@auth/prisma-adapter';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 
 export const authOptions = {
-  adapter: PrismaAdapter(prisma),
   providers: [
     CredentialsProvider({
       name: 'credentials',
@@ -18,26 +15,8 @@ export const authOptions = {
           throw new Error('Invalid credentials');
         }
 
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email
-          }
-        });
-
-        if (!user || !user?.password) {
-          throw new Error('Invalid credentials');
-        }
-
-        const isCorrectPassword = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
-
-        if (!isCorrectPassword) {
-          throw new Error('Invalid credentials');
-        }
-
-        return user;
+        // TODO: Implement user authentication without Prisma
+        return null;
       }
     })
   ],
@@ -47,9 +26,6 @@ export const authOptions = {
   pages: {
     signIn: '/login',
   },
-  callbacks: {
-    // Add custom callbacks here
-  }
 };
 
 const handler = NextAuth(authOptions);
