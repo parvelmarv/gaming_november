@@ -9,8 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "next-auth": "^4.22.1"
   },
   "devDependencies": {
     "@types/node": "^20",
