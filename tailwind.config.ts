@@ -16,6 +16,7 @@ const config: Config = {
         'roboto-mono': ['"Roboto Mono"', 'monospace'],
         'monoton': ['var(--font-monoton)', 'cursive'],
         'tilt-neon': ['var(--font-tilt-neon)', 'cursive'],
+        'orbitron': ['var(--font-orbitron)', 'sans-serif'],
       },
       colors: {
         background: "var(--background)",

@@ -20,17 +20,8 @@ export default function Navbar() {
           {/* Desktop Navigation */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-4">
-              <Link href="/" className="text-white hover:text-purple-300 px-3 py-2 rounded-md text-sm font-medium">
-                Home
-              </Link>
               <Link href="/leaderboard" className="text-white hover:text-purple-300 px-3 py-2 rounded-md text-sm font-medium">
-                Leaderboard
-              </Link>
-              <Link href="/about" className="text-white hover:text-purple-300 px-3 py-2 rounded-md text-sm font-medium">
-                About
-              </Link>
-              <Link href="/schedule" className="text-white hover:text-purple-300 px-3 py-2 rounded-md text-sm font-medium">
-                Schedule
+                Results 2024
               </Link>
             </div>
           </div>
@@ -69,14 +60,8 @@ export default function Navbar() {
         {/* Mobile Navigation */}
         <div className={`${isMenuOpen ? 'block' : 'hidden'} md:hidden`}>
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <Link href="/" className="text-white hover:text-purple-300 block px-3 py-2 rounded-md text-base font-medium">
-              Home
-            </Link>
-            <Link href="/about" className="text-white hover:text-purple-300 block px-3 py-2 rounded-md text-base font-medium">
-              About
-            </Link>
-            <Link href="/schedule" className="text-white hover:text-purple-300 block px-3 py-2 rounded-md text-base font-medium">
-              Schedule
+            <Link href="/leaderboard" className="text-white hover:text-purple-300 block px-3 py-2 rounded-md text-base font-medium">
+              Results 2024
             </Link>
           </div>
         </div>
