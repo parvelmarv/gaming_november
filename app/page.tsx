@@ -7,8 +7,14 @@ import TitleYear from './components/TitleYear';
 
 export default function Home() {
   const calculateTimeLeft = () => {
-    const nextNovember = new Date(new Date().getFullYear() + 1, 10, 1);
     const now = new Date();
+    let nextNovember = new Date(now.getFullYear(), 10, 1); // November 1st of current year
+    
+    // If we're past November 1st this year, set it to next year
+    if (now > nextNovember) {
+      nextNovember = new Date(now.getFullYear() + 1, 10, 1);
+    }
+    
     const difference = nextNovember.getTime() - now.getTime();
 
     let timeLeft = {
