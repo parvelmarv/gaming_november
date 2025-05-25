@@ -6,45 +6,43 @@ import TimeUnit from './components/TimeUnit';
 import TitleYear from './components/TitleYear';
 
 export default function Home() {
-  const calculateTimeLeft = () => {
-    const now = new Date();
-    let nextNovember = new Date(now.getFullYear(), 10, 1); // November 1st of current year
-    
-    // If we're past November 1st this year, set it to next year
-    if (now > nextNovember) {
-      nextNovember = new Date(now.getFullYear() + 1, 10, 1);
-    }
-    
-    const difference = nextNovember.getTime() - now.getTime();
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
 
-    let timeLeft = {
-      days: 0,
-      hours: 0,
-      minutes: 0,
-      seconds: 0,
-    };
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const now = new Date();
+      let nextNovember = new Date(now.getFullYear(), 10, 1); // November 1st of current year
+      
+      // If we're past November 1st this year, set it to next year
+      if (now > nextNovember) {
+        nextNovember = new Date(now.getFullYear() + 1, 10, 1);
+      }
+      
+      const difference = nextNovember.getTime() - now.getTime();
 
-    if (difference > 0) {
-      timeLeft = {
+      return {
         days: Math.floor(difference / (1000 * 60 * 60 * 24)),
         hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
         minutes: Math.floor((difference / 1000 / 60) % 60),
         seconds: Math.floor((difference / 1000) % 60),
       };
-    }
+    };
 
-    return timeLeft;
-  };
+    // Initial calculation
+    setTimeLeft(calculateTimeLeft());
 
-  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
+    // Update every second
+    const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft());
     }, 1000);
 
-    return () => clearTimeout(timer);
-  });
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <div className="relative">
