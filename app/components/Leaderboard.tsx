@@ -23,28 +23,6 @@ export default function Leaderboard() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#2b1055] via-[#7597de] to-[#ff2975] pt-20">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative">
-        {/* Left Image - Happy Huke - aligned with first place */}
-        <div className="absolute left-0 top-[92px] -translate-x-full hidden lg:block">
-          <Image
-            src="/happy _huke.webp"
-            alt="Happy Huke"
-            width={300}
-            height={300}
-            className="opacity-70"
-          />
-        </div>
-
-        {/* Right Image - Sad Grasman - aligned with last place */}
-        <div className="absolute right-0 bottom-[92px] translate-x-full hidden lg:block">
-          <Image
-            src="/sad _grasman.webp"
-            alt="Sad Grasman"
-            width={300}
-            height={300}
-            className="opacity-70"
-          />
-        </div>
-
         <h2 className="text-4xl md:text-5xl font-bold text-white text-center mb-12 font-tilt-neon glow-effect-cyan">
           Last Year&apos;s Standings
         </h2>
