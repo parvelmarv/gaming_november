@@ -56,10 +56,8 @@ export async function GET(request: NextRequest) {
     "http://localhost:3000",
     "http://localhost:5173",
     "https://www.povelc.com",
-    'https://parvelmarv.itch.io/rollo-rocket',
+    'https://parvelmarv.itch.io',
     'https://html-classic.itch.zone',
-    'https://*.itch.zone',
-    'https://*.itch.io',
     'https://www.gamingnovember.com'
     
   ];
@@ -122,8 +120,7 @@ export async function POST(request: NextRequest) {
     "https://www.povelc.com",
     'https://parvelmarv.itch.io/rollo-rocket',
     'https://html-classic.itch.zone',
-    'https://*.itch.zone',
-    'https://*.itch.io'
+    'https://www.gamingnovember.com'
   ];
 
   if (allowedOrigins.includes(origin as string)) {
