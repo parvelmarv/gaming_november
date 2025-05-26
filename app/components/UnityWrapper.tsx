@@ -115,6 +115,8 @@ export default function UnityWrapper({
             height: 100%;
             margin: auto;
             position: relative;
+            overflow: hidden;
+            background: #231F20;
           }
           #unity-canvas {
             width: 100%;
@@ -125,6 +127,8 @@ export default function UnityWrapper({
             perspective: 1000;
             will-change: transform;
             object-fit: contain;
+            outline: none;
+            border: none;
           }
           #unity-loading-bar {
             position: absolute;
@@ -181,6 +185,18 @@ export default function UnityWrapper({
               width: 960px;
               height: 600px;
             }
+          }
+          :fullscreen #unity-container {
+            width: 100vw !important;
+            height: 100vh !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          :fullscreen #unity-canvas {
+            width: 100vw !important;
+            height: 100vh !important;
+            margin: 0 !important;
+            padding: 0 !important;
           }
         `;
         document.head.appendChild(style);
@@ -454,6 +470,7 @@ export default function UnityWrapper({
           High memory usage detected. Consider reloading the game.
         </div>
       )}
+      <h1 className="text-6xl font-monoton text-[#ff8a2c] text-center mb-4 glow-effect tracking-wider">WARMUP GAME</h1>
       {!showGame ? (
         <div className="flex items-center justify-center min-h-[540px] bg-gray-900">
           <button
@@ -466,6 +483,25 @@ export default function UnityWrapper({
       ) : (
         <div className="relative">
           <div ref={containerRef} className="unity-container" />
+          <div className="bg-gray-800 p-2 flex justify-end">
+            <button
+              onClick={() => {
+                const container = containerRef.current;
+                if (!container) return;
+                if (document.fullscreenElement) {
+                  document.exitFullscreen();
+                } else {
+                  container.requestFullscreen();
+                }
+              }}
+              className="text-white hover:text-[#ff8a2c] transition-colors"
+              aria-label="Toggle fullscreen"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+              </svg>
+            </button>
+          </div>
         </div>
       )}
     </div>
