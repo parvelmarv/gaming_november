@@ -1,7 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { Monoton, Orbitron, Press_Start_2P } from 'next/font/google';
+import { Monoton, Orbitron, Press_Start_2P, Lato, Tilt_Neon } from 'next/font/google';
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -30,6 +30,17 @@ const orbitron = Orbitron({
   display: 'swap',
   variable: '--font-orbitron',
 });
+const lato = Lato({
+  weight: ['400', '700', '900'],
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-lato',
+});
+const tiltNeon = Tilt_Neon({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-tilt-neon',
+});
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -44,7 +55,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${monoton.variable} ${pressStart2P.variable} ${orbitron.variable} antialiased bg-black`}
+        className={`${geistSans.variable} ${geistMono.variable} ${monoton.variable} ${pressStart2P.variable} ${orbitron.variable} ${lato.variable} ${tiltNeon.variable} antialiased bg-black`}
       >
         {children}
       </body>

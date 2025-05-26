@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .glow-effect {
+    text-shadow: 0 0 10px #ff8a2c,
+                 0 0 20px #ff8a2c,
+                 0 0 30px #ff2975;
+  }
+
+  .glow-effect-cyan {
+    text-shadow: 0 0 10px #00ffff,
+                 0 0 20px #00ffff,
+                 0 0 30px #00ffff;
+  }
+
+  .glow-effect-soft {
+    text-shadow: 0 0 10px rgba(255, 138, 44, 0.7),
+                 0 0 20px rgba(255, 138, 44, 0.5),
+                 0 0 30px rgba(255, 41, 117, 0.3);
+  }
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;

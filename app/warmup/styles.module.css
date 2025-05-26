@@ -1,0 +1,43 @@
+.container {
+  position: relative;
+  min-height: 100vh;
+  background: linear-gradient(to bottom, #2b1055, #7597de, #ff2975);
+  overflow: hidden;
+}
+
+.main {
+  position: relative;
+  min-height: 100vh;
+  padding: 1rem;
+}
+
+.gameContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.gameWrapper {
+  width: 100%;
+  max-width: 960px;
+  aspect-ratio: 16/10;
+  position: relative;
+  z-index: 10;
+}
+
+.loadingContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 540px;
+}
+
+.loadingText {
+  color: white;
+  font-size: 1.25rem;
+  text-shadow: 0 0 10px #00ffff,
+               0 0 20px #00ffff,
+               0 0 30px #00ffff;
+} 

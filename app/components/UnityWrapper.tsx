@@ -1,6 +1,36 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import styles from './UnityWrapper.module.css';
+import { useFullscreen } from '../hooks/useFullscreen';
+import { useOrientation } from '../hooks/useOrientation';
+
+// Types
+interface UnityConfig {
+  dataUrl: string;
+  frameworkUrl: string;
+  codeUrl: string;
+  streamingAssetsUrl: string;
+  companyName: string;
+  productName: string;
+  productVersion: string;
+  showBanner: (msg: string, type: string) => void;
+  devicePixelRatio: number;
+  matchWebGLToCanvasSize: boolean;
+  memorySize: number;
+  webglContextAttributes: {
+    preserveDrawingBuffer: boolean;
+    powerPreference: string;
+    failIfMajorPerformanceCaveat: boolean;
+  };
+  loadingScreen: {
+    showLoadingScreen: boolean;
+    loadingScreenBackgroundColor: string;
+    loadingScreenProgressBarColor: string;
+  };
+  compatibilityCheck: (unityInstance: any, onsuccess: () => void, onerror: (error: string) => void) => void;
+  onProgress: (progress: number) => void;
+}
 
 interface UnityWrapperProps {
   buildUrl: string;
@@ -17,13 +47,199 @@ interface LogEntry {
   type: 'info' | 'error' | 'warning';
 }
 
+// Add new interface for device detection
+interface DeviceInfo {
+  isMobile: boolean;
+  isLandscape: boolean;
+}
+
+// Add at the top with other interfaces
+interface ScreenOrientationType extends ScreenOrientation {
+  lock(orientation: 'landscape' | 'portrait'): Promise<void>;
+  unlock(): Promise<void>;
+}
+
+// Separate utility functions for feature detection
+const hasFullscreenSupport = (): boolean => {
+  return !!(
+    document.fullscreenEnabled ||
+    (document as any).webkitFullscreenEnabled ||
+    (document as any).mozFullScreenEnabled ||
+    (document as any).msFullscreenEnabled
+  );
+};
+
+const hasOrientationLockSupport = (): boolean => {
+  return !!(screen.orientation && 'lock' in screen.orientation);
+};
+
+// Components
+const LoadingBar: React.FC<{ progress: number }> = ({ progress }) => (
+  <div className={styles.loadingBar}>
+    <div className={styles.logo} />
+    <div className={styles.progressBarEmpty}>
+      <div 
+        className={styles.progressBarFull} 
+        style={{ width: `${progress}%` }} 
+      />
+    </div>
+  </div>
+);
+
+const ErrorDisplay: React.FC<{ 
+  error: string | null; 
+  onReload: () => void 
+}> = ({ error, onReload }) => (
+  <div className={styles.errorOverlay}>
+    <div className={styles.errorContent}>
+      <p>{error}</p>
+      <button onClick={onReload} className={styles.reloadButton}>
+        Reload Game
+      </button>
+    </div>
+  </div>
+);
+
+const MemoryWarning: React.FC = () => (
+  <div className={styles.memoryWarning}>
+    High memory usage detected. Consider reloading the game.
+  </div>
+);
+
+const OrientationWarning: React.FC = () => (
+  <div className={styles.orientationWarning}>
+    Please rotate your device to landscape mode
+  </div>
+);
+
+const FullscreenButton: React.FC<{ 
+  containerRef: React.RefObject<HTMLDivElement> 
+}> = ({ containerRef }) => {
+  const { lockOrientation, unlockOrientation } = useOrientation();
+  
+  const logSizes = useCallback(() => {
+    if (containerRef.current) {
+      const container = containerRef.current;
+      const canvas = container.querySelector('canvas');
+      const containerStyle = window.getComputedStyle(container);
+      const canvasStyle = canvas ? window.getComputedStyle(canvas) : null;
+      
+      if (canvas) {
+        // Keep minimal logging for debugging if needed
+        console.log('Size changed:', {
+          container: {
+            width: container.offsetWidth,
+            height: container.offsetHeight
+          },
+          canvas: {
+            width: canvas.offsetWidth,
+            height: canvas.offsetHeight
+          }
+        });
+      }
+    }
+  }, [containerRef]);
+
+  // Add resize observer
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      logSizes();
+    });
+
+    resizeObserver.observe(containerRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [containerRef, logSizes]);
+
+  // Add fullscreen change listener
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement && containerRef.current) {
+        try {
+          unlockOrientation();
+          containerRef.current.classList.remove(styles.fullscreenContainer);
+          // Reset to original size
+          containerRef.current.style.width = '960px';
+          containerRef.current.style.height = '600px';
+          
+          // Force a reflow
+          void containerRef.current.offsetHeight;
+          
+          logSizes();
+        } catch (error) {
+          console.error('Error exiting fullscreen:', error);
+        }
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
+  }, [containerRef, logSizes, unlockOrientation]);
+
+  const { isFullscreen, toggleFullscreen } = useFullscreen(containerRef, {
+    onEnter: () => {
+      try {
+        lockOrientation('landscape');
+        if (containerRef.current) {
+          containerRef.current.classList.add(styles.fullscreenContainer);
+          // Force the container to take full screen
+          containerRef.current.style.width = '100vw';
+          containerRef.current.style.height = '100vh';
+          logSizes();
+        }
+      } catch (error) {
+        console.error('Error entering fullscreen:', error);
+      }
+    },
+    onExit: () => {
+      // The actual exit handling is now done in the fullscreenchange event listener
+    },
+  });
+
+  return (
+    <button 
+      onClick={toggleFullscreen}
+      className={styles.fullscreenButton}
+      aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+    >
+      <svg 
+        xmlns="http://www.w3.org/2000/svg" 
+        width="24" 
+        height="24" 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="currentColor" 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+      >
+        <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+      </svg>
+    </button>
+  );
+};
+
+// Main Component
 export default function UnityWrapper({ 
   buildUrl, 
   width = 960, 
   height = 540,
   gameName = "RolloRocket",
   gameVersion = "1.0.0",
-  gameCompany = "DefaultCompany"
+  gameCompany = "PInC"
 }: UnityWrapperProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,395 +248,234 @@ export default function UnityWrapper({
   const [memoryWarning, setMemoryWarning] = useState(false);
   const [showGame, setShowGame] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [fontLoaded, setFontLoaded] = useState<boolean | null>(null);
+  const [deviceInfo, setDeviceInfo] = useState<DeviceInfo>({
+    isMobile: false,
+    isLandscape: false
+  });
+  const { lockOrientation } = useOrientation();
+  const [showOrientationWarning, setShowOrientationWarning] = useState(false);
 
-  // Persistent logging function
-  const persistentLog = (message: string, type: 'info' | 'error' | 'warning' = 'info') => {
-    const timestamp = new Date().toISOString();
-    const logEntry: LogEntry = { timestamp, message, type };
-    
-    // Update state
-    setLogs(prev => [...prev, logEntry].slice(-100)); // Keep last 100 logs
-    
-    // Store in localStorage
-    try {
-      const storedLogs = localStorage.getItem('unity_logs');
-      const allLogs = storedLogs ? JSON.parse(storedLogs) : [];
-      allLogs.push(logEntry);
-      // Keep only last 1000 logs in localStorage
-      localStorage.setItem('unity_logs', JSON.stringify(allLogs.slice(-1000)));
-    } catch (e) {
-      console.error('Failed to store log:', e);
-    }
-
-    // Only log errors and warnings to console
-    if (type === 'error' || type === 'warning') {
-      console.log(`[UnityWrapper] ${message}`);
-    }
-  };
-
-  // Load stored logs on mount
+  // Device detection
   useEffect(() => {
-    try {
-      const storedLogs = localStorage.getItem('unity_logs');
-      if (storedLogs) {
-        setLogs(JSON.parse(storedLogs).slice(-100));
-      }
-    } catch (e) {
-      console.error('Failed to load stored logs:', e);
+    const checkDevice = () => {
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const isLandscape = window.innerWidth > window.innerHeight;
+      setDeviceInfo({ isMobile, isLandscape });
+      
+      // Show orientation warning on iOS in portrait mode
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      setShowOrientationWarning(isIOS && !isLandscape);
+    };
+
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
+    window.addEventListener('orientationchange', checkDevice);
+
+    return () => {
+      window.removeEventListener('resize', checkDevice);
+      window.removeEventListener('orientationchange', checkDevice);
+    };
+  }, []);
+
+  // Prevent scrolling when game is loaded on mobile
+  useEffect(() => {
+    if (showGame && deviceInfo.isMobile) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [showGame, deviceInfo.isMobile]);
+
+  // Font loading detection
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const checkFont = () => {
+        // Create a test element
+        const testElement = document.createElement('span');
+        testElement.style.fontFamily = 'Lato';
+        testElement.style.position = 'absolute';
+        testElement.style.visibility = 'hidden';
+        testElement.style.fontSize = '72px';
+        testElement.textContent = 'Test';
+        document.body.appendChild(testElement);
+
+        // Get the computed font
+        const computedFont = window.getComputedStyle(testElement).fontFamily;
+        
+        // Check if Lato is actually being used
+        const isLatoLoaded = computedFont.includes('Lato');
+        
+        // Get the actual rendered font metrics
+        const metrics = {
+          width: testElement.offsetWidth,
+          height: testElement.offsetHeight,
+          computedStyle: window.getComputedStyle(testElement)
+        };
+
+        // Log detailed results
+        console.log('Font detection details:', {
+          computedFont,
+          isLatoLoaded,
+          fallbackFont: !isLatoLoaded ? computedFont : null,
+          metrics,
+          fontFace: document.fonts.check('12px Lato'),
+          allLoadedFonts: Array.from(document.fonts).map(font => font.family)
+        });
+
+        setFontLoaded(isLatoLoaded);
+
+        // Cleanup
+        document.body.removeChild(testElement);
+      };
+
+      // Check immediately
+      checkFont();
+
+      // Check again after fonts are loaded
+      document.fonts.ready.then(() => {
+        console.log('Fonts loaded, checking again...');
+        checkFont();
+      });
+
+      // Check after a delay to ensure everything is settled
+      setTimeout(checkFont, 1000);
     }
   }, []);
 
+  // Persistent logging function
+  const persistentLog = useCallback((message: string, type: 'info' | 'error' | 'warning' = 'info') => {
+    const timestamp = new Date().toISOString();
+    const logEntry: LogEntry = { timestamp, message, type };
+    
+    setLogs(prev => [...prev, logEntry].slice(-100));
+    
+    if (type === 'error' || type === 'warning') {
+      console.log(`[UnityWrapper] ${message}`);
+    }
+  }, []);
+
+  // Memory monitoring
+  useEffect(() => {
+    if (!showGame) return;
+
+    const memoryInterval = setInterval(() => {
+      try {
+        if (window.performance && (window.performance as any).memory) {
+          const memory = (window.performance as any).memory;
+          const usedMB = Math.round(memory.usedJSHeapSize / 1024 / 1024);
+          const totalMB = Math.round(memory.jsHeapSizeLimit / 1024 / 1024);
+          
+          if (usedMB > totalMB * 0.8) {
+            persistentLog(`High memory usage: ${usedMB}MB / ${totalMB}MB`, 'warning');
+            setMemoryWarning(true);
+            if (usedMB > totalMB * 0.9) {
+              persistentLog('Critical: Memory usage too high', 'error');
+              setError('Game is using too much memory. Please reload the game.');
+            }
+          } else {
+            setMemoryWarning(false);
+          }
+        }
+      } catch (e) {
+        persistentLog(`Error checking memory: ${e}`, 'error');
+      }
+    }, 10000);
+
+    return () => clearInterval(memoryInterval);
+  }, [showGame, persistentLog]);
+
+  // Unity initialization
   useEffect(() => {
     let isMounted = true;
     const container = containerRef.current;
-    if (!container) return;
-
-    // Add global error handler
-    const handleGlobalError = (event: ErrorEvent) => {
-      persistentLog(`Global error: ${event.message}`, 'error');
-      setError(`Game error: ${event.message}`);
-      event.preventDefault();
-    };
-
-    // Add unhandled promise rejection handler
-    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      persistentLog(`Unhandled promise rejection: ${event.reason}`, 'error');
-      setError(`Game error: ${event.reason}`);
-    };
-
-    window.addEventListener('error', handleGlobalError);
-    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+    if (!container || !showGame) return;
 
     const loadUnity = async () => {
       try {
         persistentLog('Starting Unity initialization');
         
-        // Create Unity container structure
-        container.innerHTML = `
-          <div id="unity-container" class="unity-desktop">
-            <canvas id="unity-canvas" width="${width}" height="${height}" tabindex="-1"></canvas>
-            <div id="unity-loading-bar">
-              <div id="unity-logo"></div>
-              <div id="unity-progress-bar-empty">
-                <div id="unity-progress-bar-full"></div>
-              </div>
-            </div>
-            <div id="unity-warning"></div>
-          </div>
-        `;
+        const config: UnityConfig = {
+          dataUrl: `${buildUrl}/ProductionGz.data.gz`,
+          frameworkUrl: `${buildUrl}/ProductionGz.framework.js.gz`,
+          codeUrl: `${buildUrl}/ProductionGz.wasm.gz`,
+          streamingAssetsUrl: "StreamingAssets",
+          companyName: gameCompany,
+          productName: gameName,
+          productVersion: gameVersion,
+          showBanner: (msg: string, type: string) => {
+            persistentLog(`Banner: ${msg} (${type})`, type === 'error' ? 'error' : 'info');
+            if (type === 'error') {
+              setError(msg);
+            }
+          },
+          devicePixelRatio: window.devicePixelRatio || 1,
+          matchWebGLToCanvasSize: true,
+          memorySize: 512,
+          webglContextAttributes: {
+            preserveDrawingBuffer: true,
+            powerPreference: 'high-performance',
+            failIfMajorPerformanceCaveat: true,
+          },
+          loadingScreen: {
+            showLoadingScreen: true,
+            loadingScreenBackgroundColor: '#231F20',
+            loadingScreenProgressBarColor: '#FFFFFF',
+          },
+          compatibilityCheck: (unityInstance: any, onsuccess: () => void, onerror: (error: string) => void) => {
+            if (unityInstance.Module.WebGL.isWebGL2Available()) {
+              onsuccess();
+            } else {
+              onerror('WebGL 2 is not available');
+            }
+          },
+          onProgress: (progress: number) => {
+            const percent = Math.round(100 * progress);
+            persistentLog(`Loading progress: ${percent}%`);
+            setLoadingProgress(percent);
+          },
+        };
 
-        // Add Unity styles
-        const style = document.createElement('style');
-        style.textContent = `
-          #unity-container {
-            width: 100%;
-            height: 100%;
-            margin: auto;
-            position: relative;
-            overflow: hidden;
-            background: #231F20;
-          }
-          #unity-canvas {
-            width: 100%;
-            height: 100%;
-            background: #231F20;
-            transform: translateZ(0);
-            backface-visibility: hidden;
-            perspective: 1000;
-            will-change: transform;
-            object-fit: contain;
-            outline: none;
-            border: none;
-          }
-          #unity-loading-bar {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            display: none;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-          }
-          #unity-logo {
-            width: 154px;
-            height: 130px;
-            background: url('${buildUrl}/../TemplateData/unity-logo-dark.png') no-repeat center;
-            margin: 0 auto;
-          }
-          #unity-progress-bar-empty {
-            width: 141px;
-            height: 18px;
-            margin: 10px auto;
-            background: url('${buildUrl}/../TemplateData/progress-bar-empty-dark.png') no-repeat center;
-          }
-          #unity-progress-bar-full {
-            width: 0%;
-            height: 18px;
-            background: url('${buildUrl}/../TemplateData/progress-bar-full-dark.png') no-repeat center;
-          }
-          #unity-warning {
-            position: absolute;
-            left: 50%;
-            top: 5%;
-            transform: translate(-50%);
-            background: white;
-            padding: 10px;
-            display: none;
-          }
-          @media (max-width: 960px) {
-            #unity-container {
-              width: 100%;
-              height: 100vh;
-            }
-            #unity-canvas {
-              width: 100%;
-              height: 100%;
-            }
-          }
-          @media (min-width: 961px) {
-            #unity-container {
-              width: 960px;
-              height: 600px;
-            }
-            #unity-canvas {
-              width: 960px;
-              height: 600px;
-            }
-          }
-          :fullscreen #unity-container {
-            width: 100vw !important;
-            height: 100vh !important;
-            margin: 0 !important;
-            padding: 0 !important;
-          }
-          :fullscreen #unity-canvas {
-            width: 100vw !important;
-            height: 100vh !important;
-            margin: 0 !important;
-            padding: 0 !important;
-          }
-        `;
-        document.head.appendChild(style);
-
-        // Load Unity loader
         const script = document.createElement('script');
         script.src = `${buildUrl}/ProductionGz.loader.js`;
         script.async = true;
 
         script.onload = () => {
+          if (!isMounted) return;
           persistentLog('Unity loader script loaded');
-          
-          const config = {
-            dataUrl: `${buildUrl}/ProductionGz.data.gz`,
-            frameworkUrl: `${buildUrl}/ProductionGz.framework.js.gz`,
-            codeUrl: `${buildUrl}/ProductionGz.wasm.gz`,
-            streamingAssetsUrl: "StreamingAssets",
-            companyName: gameCompany,
-            productName: gameName,
-            productVersion: gameVersion,
-            showBanner: (msg: string, type: string) => {
-              persistentLog(`Banner: ${msg} (${type})`, type === 'error' ? 'error' : 'info');
-              if (type === 'error') {
-                setError(msg);
-              }
-            },
-            devicePixelRatio: window.devicePixelRatio || 1,
-            matchWebGLToCanvasSize: true,
-            memorySize: 512,
-            webglContextAttributes: {
-              preserveDrawingBuffer: true,
-              powerPreference: 'high-performance',
-              failIfMajorPerformanceCaveat: true,
-            },
-            loadingScreen: {
-              showLoadingScreen: true,
-              loadingScreenBackgroundColor: '#231F20',
-              loadingScreenProgressBarColor: '#FFFFFF',
-            },
-            compatibilityCheck: (unityInstance: any, onsuccess: () => void, onerror: (error: string) => void) => {
-              if (unityInstance.Module.WebGL.isWebGL2Available()) {
-                onsuccess();
-              } else {
-                onerror('WebGL 2 is not available');
-              }
-            },
-            onProgress: (progress: number) => {
-              const percent = Math.round(100 * progress);
-              persistentLog(`Loading progress: ${percent}%`);
-              const progressBar = document.querySelector('#unity-progress-bar-full');
-              if (progressBar instanceof HTMLElement) {
-                progressBar.style.width = `${100 * progress}%`;
-              }
-            },
-          };
 
-          // Create Unity instance with optimized settings
-          (window as any).createUnityInstance(document.querySelector('#unity-canvas'), config, (progress: number) => {
-            const percent = Math.round(100 * progress);
-            persistentLog(`Loading progress: ${percent}%`);
-            const progressBar = document.querySelector('#unity-progress-bar-full');
-            if (progressBar instanceof HTMLElement) {
-              progressBar.style.width = `${100 * progress}%`;
-            }
-          }).then((instance: any) => {
-            if (!isMounted) return;
-            
-            persistentLog('Unity instance created successfully');
-            setUnityInstance(instance);
-            setIsLoading(false);
-
-            // Optimize canvas for better performance
-            const unityCanvas = document.querySelector('#unity-canvas') as HTMLCanvasElement;
-            if (unityCanvas) {
-              // Enable hardware acceleration
-              unityCanvas.style.transform = 'translateZ(0)';
-              unityCanvas.style.backfaceVisibility = 'hidden';
-              unityCanvas.style.perspective = '1000px';
-              unityCanvas.style.willChange = 'transform';
-              
-              // Optimize for touch devices
-              unityCanvas.style.touchAction = 'none';
-              
-              // Set canvas to high priority
-              unityCanvas.style.pointerEvents = 'auto';
-
-              // Add WebGL context error handling
-              unityCanvas.addEventListener('webglcontextlost', (e) => {
-                persistentLog('WebGL context lost - attempting to restore', 'warning');
-                e.preventDefault();
-                // Attempt to restore context
-                setTimeout(() => {
-                  if (unityCanvas.getContext('webgl2')) {
-                    persistentLog('WebGL context restored successfully');
-                  } else {
-                    persistentLog('Failed to restore WebGL context', 'error');
-                    setError('Graphics context lost. Please reload the game.');
-                  }
-                }, 1000);
-              }, false);
-            }
-
-            // Monitor scene loading
-            instance.Module.onRuntimeInitialized = () => {
-              persistentLog('Unity runtime initialized');
-              
-              // Set Unity to run at maximum frame rate
-              instance.SetFullscreen(0);
-              instance.SetQualityLevel(5); // Highest quality level
-              
-              // Monitor scene loading
-              const originalLoadScene = instance.Module.SceneManager.LoadScene;
-              instance.Module.SceneManager.LoadScene = function(sceneName: string) {
-                persistentLog(`Attempting to load scene: ${sceneName}`);
-                try {
-                  const result = originalLoadScene.call(this, sceneName);
-                  persistentLog(`Scene load started: ${sceneName}`);
-                  return result;
-                } catch (e: any) {
-                  persistentLog(`Error loading scene ${sceneName}: ${e.message}`, 'error');
-                  setError(`Failed to load level: ${e.message}`);
-                  throw e;
-                }
-              };
-            };
-
-          }).catch((message: string) => {
-            if (!isMounted) return;
-            persistentLog(`Error creating Unity instance: ${message}`, 'error');
-            setError(`Failed to load game: ${message}`);
-            setIsLoading(false);
-          });
+          (window as any).createUnityInstance(document.querySelector('#unity-canvas'), config)
+            .then((instance: any) => {
+              if (!isMounted) return;
+              setUnityInstance(instance);
+              setIsLoading(false);
+              persistentLog('Unity instance created successfully');
+            })
+            .catch((message: string) => {
+              if (!isMounted) return;
+              persistentLog(`Error creating Unity instance: ${message}`, 'error');
+              setError(`Failed to load game: ${message}`);
+              setIsLoading(false);
+            });
         };
 
-        script.onerror = (error) => {
+        script.onerror = () => {
           if (!isMounted) return;
-          persistentLog(`Error loading script: ${error}`, 'error');
-          persistentLog(`Attempted to load from: ${buildUrl}/ProductionGz.loader.js`, 'error');
+          persistentLog('Error loading Unity script', 'error');
           setError('Failed to load game files. Please try reloading.');
           setIsLoading(false);
         };
 
-        // Add error handling for file loading
-        const checkFileExists = async (url: string) => {
-          try {
-            const response = await fetch(url, { method: 'HEAD' });
-            if (!response.ok) {
-              persistentLog(`File not found: ${url}`, 'error');
-              return false;
-            }
-            return true;
-          } catch (e) {
-            persistentLog(`Error checking file ${url}: ${e}`, 'error');
-            return false;
-          }
-        };
-
-        // Check if all required files exist
-        const checkFiles = async () => {
-          const files = [
-            `${buildUrl}/ProductionGz.loader.js`,
-            `${buildUrl}/ProductionGz.data.gz`,
-            `${buildUrl}/ProductionGz.framework.js.gz`,
-            `${buildUrl}/ProductionGz.wasm.gz`
-          ];
-
-          for (const file of files) {
-            const exists = await checkFileExists(file);
-            if (!exists) {
-              persistentLog(`Required file missing: ${file}`, 'error');
-              setError(`Failed to load game files. Missing: ${file.split('/').pop()}`);
-              setIsLoading(false);
-              return false;
-            }
-          }
-          return true;
-        };
-
-        // Check files before loading
-        checkFiles().then(exists => {
-          if (exists) {
-            document.body.appendChild(script);
-          }
-        });
-
-        // Add memory monitoring
-        const memoryInterval = setInterval(() => {
-          try {
-            if (window.performance && (window.performance as any).memory) {
-              const memory = (window.performance as any).memory;
-              const usedMB = Math.round(memory.usedJSHeapSize / 1024 / 1024);
-              const totalMB = Math.round(memory.jsHeapSizeLimit / 1024 / 1024);
-              
-              // Only log if memory usage is high
-              if (usedMB > totalMB * 0.8) {
-                persistentLog(`High memory usage: ${usedMB}MB / ${totalMB}MB`, 'warning');
-                setMemoryWarning(true);
-                if (usedMB > totalMB * 0.9) {
-                  persistentLog('Critical: Memory usage too high', 'error');
-                  setError('Game is using too much memory. Please reload the game.');
-                }
-              } else {
-                setMemoryWarning(false);
-              }
-            }
-          } catch (e) {
-            persistentLog(`Error checking memory: ${e}`, 'error');
-          }
-        }, 10000); // Check every 10 seconds instead of 5
+        document.body.appendChild(script);
 
         return () => {
           isMounted = false;
-          clearInterval(memoryInterval);
-          window.removeEventListener('error', handleGlobalError);
-          window.removeEventListener('unhandledrejection', handleUnhandledRejection);
           if (unityInstance) {
             unityInstance.Quit();
           }
-          if (container) {
-            container.innerHTML = '';
-          }
-          style.remove();
+          script.remove();
         };
       } catch (e: any) {
         persistentLog(`Error in Unity initialization: ${e.message}`, 'error');
@@ -429,80 +484,86 @@ export default function UnityWrapper({
       }
     };
 
-    if (showGame) {
-      loadUnity();
-    }
+    loadUnity();
+  }, [buildUrl, gameName, gameVersion, gameCompany, showGame, persistentLog]);
 
-    return () => {
-      if (unityInstance) {
-        unityInstance.Quit();
-      }
-    };
-  }, [buildUrl, width, height, gameName, gameVersion, gameCompany, showGame]);
-
-  const reloadGame = () => {
+  const reloadGame = useCallback(() => {
     setError(null);
     setMemoryWarning(false);
     setIsLoading(true);
+    setLoadingProgress(0);
     if (unityInstance) {
       unityInstance.Quit();
     }
-    if (containerRef.current) {
-      containerRef.current.innerHTML = '';
-    }
-  };
+  }, [unityInstance]);
 
   return (
-    <div className="relative">
-      {error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-10">
-          <div className="bg-red-500 text-white p-6 rounded-lg text-center">
-            <p className="mb-4">{error}</p>
-            <button
-              onClick={reloadGame}
-              className="bg-white text-red-500 px-4 py-2 rounded hover:bg-gray-100 transition-colors"
-            >
-              Reload Game
-            </button>
-          </div>
-        </div>
-      )}
-      {memoryWarning && !error && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-yellow-500 text-white px-4 py-2 rounded-lg z-10">
-          High memory usage detected. Consider reloading the game.
-        </div>
-      )}
-      <h1 className="text-6xl font-monoton text-[#ff8a2c] text-center mb-4 glow-effect tracking-wider">WARMUP GAME</h1>
+    <div className={styles.container}>
+      {error && <ErrorDisplay error={error} onReload={reloadGame} />}
+      {memoryWarning && !error && <MemoryWarning />}
+      {showOrientationWarning && <OrientationWarning />}
+      
+      <h1 className={styles.title}>
+        WARMUP GAME
+      </h1>
+      
       {!showGame ? (
-        <div className="flex items-center justify-center min-h-[540px] bg-gray-900">
+        <div className={styles.loadButtonContainer}>
           <button
-            onClick={() => setShowGame(true)}
-            className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
+            onClick={async () => {
+              setShowGame(true);
+              // Only auto-fullscreen on mobile devices
+              if (deviceInfo.isMobile) {
+                try {
+                  // Lock orientation first
+                  await lockOrientation('landscape');
+                  
+                  // For iOS, we need to wait a bit longer
+                  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+                  const delay = isIOS ? 500 : 100;
+                  
+                  setTimeout(async () => {
+                    if (containerRef.current) {
+                      try {
+                        // Try fullscreen
+                        if (document.fullscreenEnabled) {
+                          await containerRef.current.requestFullscreen();
+                        } else if ((document as any).webkitFullscreenEnabled) {
+                          await (containerRef.current as any).webkitRequestFullscreen();
+                        } else if ((document as any).mozFullScreenEnabled) {
+                          await (containerRef.current as any).mozRequestFullScreen();
+                        } else if ((document as any).msFullscreenEnabled) {
+                          await (containerRef.current as any).msRequestFullscreen();
+                        }
+                      } catch (error) {
+                        console.error('Error entering fullscreen:', error);
+                      }
+                    }
+                  }, delay);
+                } catch (error) {
+                  console.error('Error with orientation lock:', error);
+                }
+              }
+            }}
+            className={styles.loadButton}
           >
             Load Game
           </button>
         </div>
       ) : (
-        <div className="relative">
-          <div ref={containerRef} className="unity-container" />
-          <div className="bg-gray-800 p-2 flex justify-end">
-            <button
-              onClick={() => {
-                const container = containerRef.current;
-                if (!container) return;
-                if (document.fullscreenElement) {
-                  document.exitFullscreen();
-                } else {
-                  container.requestFullscreen();
-                }
-              }}
-              className="text-white hover:text-[#ff8a2c] transition-colors"
-              aria-label="Toggle fullscreen"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
-              </svg>
-            </button>
+        <div className={styles.gameContainer}>
+          <div ref={containerRef} className={styles.unityContainer}>
+            <canvas 
+              id="unity-canvas" 
+              width={deviceInfo.isMobile ? window.innerWidth : width} 
+              height={deviceInfo.isMobile ? window.innerHeight : height} 
+              tabIndex={-1}
+              style={{ outline: 'none' }}
+            />
+            {isLoading && <LoadingBar progress={loadingProgress} />}
+          </div>
+          <div className={styles.controls}>
+            <FullscreenButton containerRef={containerRef} />
           </div>
         </div>
       )}

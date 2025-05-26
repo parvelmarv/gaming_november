@@ -1,0 +1,78 @@
+.loadingContainer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #000;
+  z-index: 50;
+}
+
+.loadingText {
+  color: #fff;
+  font-size: 1.5rem;
+  font-family: var(--font-press-start);
+}
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+  .loadingText {
+    font-size: 1.25rem;
+  }
+}
+
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(to bottom, #2b1055, #7597de, #ff2975);
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 0;
+  margin: 0;
+  min-height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+}
+
+.gameContainer {
+  width: 100%;
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.gameWrapper {
+  width: 100%;
+  flex: 1;
+  position: relative;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Hide scrollbars on mobile */
+.gameContainer::-webkit-scrollbar {
+  display: none;
+}
+
+.gameContainer {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+} 
