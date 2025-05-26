@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Navbar from './components/Navbar';
 import TimeUnit from './components/TimeUnit';
 import TitleYear from './components/TitleYear';
+import Test from './test';
 
 export default function Home() {
   const [timeLeft, setTimeLeft] = useState({
@@ -64,6 +65,7 @@ export default function Home() {
             </div>
           </div>
           <TitleYear />
+          <Test />
         </main>
       </div>
       <style jsx global>{`

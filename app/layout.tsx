@@ -1,7 +1,7 @@
+import "./globals.css";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import "./globals.css";
-import { Monoton, Tilt_Neon, Orbitron } from 'next/font/google';
+import { Monoton, Orbitron, Press_Start_2P } from 'next/font/google';
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -19,10 +19,11 @@ const monoton = Monoton({
   display: 'swap',
   variable: '--font-monoton',
 });
-const tiltNeon = Tilt_Neon({
+const pressStart2P = Press_Start_2P({
+  weight: '400',
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-tilt-neon',
+  variable: '--font-press-start',
 });
 const orbitron = Orbitron({
   subsets: ['latin'],
@@ -43,7 +44,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${monoton.variable} ${tiltNeon.variable} ${orbitron.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${monoton.variable} ${pressStart2P.variable} ${orbitron.variable} antialiased bg-black`}
       >
         {children}
       </body>
