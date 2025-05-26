@@ -59,7 +59,9 @@ export async function GET(request: NextRequest) {
     'https://parvelmarv.itch.io/rollo-rocket',
     'https://html-classic.itch.zone',
     'https://*.itch.zone',
-    'https://*.itch.io'
+    'https://*.itch.io',
+    'https://www.gamingnovember.com'
+    
   ];
 
   if (allowedOrigins.includes(origin as string)) {

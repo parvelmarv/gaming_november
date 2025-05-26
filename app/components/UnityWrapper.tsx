@@ -52,8 +52,10 @@ export default function UnityWrapper({
       console.error('Failed to store log:', e);
     }
 
-    // Also log to console
-    console.log(`[UnityWrapper] ${message}`);
+    // Only log errors and warnings to console
+    if (type === 'error' || type === 'warning') {
+      console.log(`[UnityWrapper] ${message}`);
+    }
   };
 
   // Load stored logs on mount
@@ -389,10 +391,10 @@ export default function UnityWrapper({
               const memory = (window.performance as any).memory;
               const usedMB = Math.round(memory.usedJSHeapSize / 1024 / 1024);
               const totalMB = Math.round(memory.jsHeapSizeLimit / 1024 / 1024);
-              persistentLog(`Memory usage: ${usedMB}MB / ${totalMB}MB`, usedMB > totalMB * 0.8 ? 'warning' : 'info');
               
+              // Only log if memory usage is high
               if (usedMB > totalMB * 0.8) {
-                persistentLog('Warning: High memory usage detected', 'warning');
+                persistentLog(`High memory usage: ${usedMB}MB / ${totalMB}MB`, 'warning');
                 setMemoryWarning(true);
                 if (usedMB > totalMB * 0.9) {
                   persistentLog('Critical: Memory usage too high', 'error');
@@ -405,7 +407,7 @@ export default function UnityWrapper({
           } catch (e) {
             persistentLog(`Error checking memory: ${e}`, 'error');
           }
-        }, 5000);
+        }, 10000); // Check every 10 seconds instead of 5
 
         return () => {
           isMounted = false;
