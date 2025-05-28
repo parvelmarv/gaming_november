@@ -12,22 +12,42 @@ const handle = app.getRequestHandler();
 // Cache for compressed files
 const compressionCache = new Map();
 
-// Function to compress and cache files
-async function compressAndCache(filePath) {
-  if (compressionCache.has(filePath)) {
-    return compressionCache.get(filePath);
+// Function to get content type based on file extension
+function getContentType(filePath) {
+  const ext = path.extname(filePath.replace('.br', ''));
+  switch (ext) {
+    case '.js':
+      return 'application/javascript';
+    case '.wasm':
+      return 'application/wasm';
+    case '.data':
+      return 'application/vnd.unity';
+    default:
+      return 'application/octet-stream';
   }
+}
 
-  const fileContent = await fs.promises.readFile(filePath);
-  const compressed = await new Promise((resolve, reject) => {
-    zlib.brotliCompress(fileContent, (err, result) => {
-      if (err) reject(err);
-      else resolve(result);
+// Function to serve brotli compressed files
+async function serveBrotliFile(filePath, res) {
+  try {
+    const fileContent = await fs.promises.readFile(filePath);
+    const contentType = getContentType(filePath);
+    
+    res.writeHead(200, {
+      'Content-Type': contentType,
+      'Content-Length': fileContent.length,
+      'Content-Encoding': 'br',
+      'Cache-Control': 'public, max-age=31536000, immutable',
+      'X-Content-Type-Options': 'nosniff',
+      'Vary': 'Accept-Encoding'
     });
-  });
-
-  compressionCache.set(filePath, compressed);
-  return compressed;
+    
+    res.end(fileContent);
+  } catch (error) {
+    console.error(`Error serving file ${filePath}:`, error);
+    res.writeHead(500);
+    res.end('Error loading game files');
+  }
 }
 
 app.prepare().then(() => {
@@ -35,29 +55,38 @@ app.prepare().then(() => {
     const parsedUrl = parse(req.url, true);
     const { pathname } = parsedUrl;
 
-    // Special handling for the loader.js file
-    if (pathname === '/games/RolloRocket/Build/ProductionGz.loader.js') {
+    // Handle Unity build files
+    if (pathname.startsWith('/games/RolloRocket/Build/')) {
       const filePath = path.join(__dirname, 'public', pathname);
       
+      // Check if file exists
       try {
-        const compressed = await compressAndCache(filePath);
-        
+        await fs.promises.access(filePath);
+      } catch (error) {
+        res.writeHead(404);
+        res.end('File not found');
+        return;
+      }
+
+      // Handle brotli compressed files
+      if (pathname.endsWith('.br')) {
+        await serveBrotliFile(filePath, res);
+        return;
+      }
+
+      // Handle loader.js
+      if (pathname.endsWith('.js')) {
+        const contentType = getContentType(filePath);
         res.writeHead(200, {
-          'Content-Type': 'application/javascript',
-          'Content-Length': compressed.length,
-          'Content-Encoding': 'br',
+          'Content-Type': contentType,
           'Cache-Control': 'public, max-age=31536000, immutable',
-          'X-Content-Type-Options': 'nosniff',
-          'Vary': 'Accept-Encoding'
+          'X-Content-Type-Options': 'nosniff'
         });
         
-        res.end(compressed);
-      } catch (error) {
-        console.error('Error serving loader.js:', error);
-        res.writeHead(500);
-        res.end('Error loading game files');
+        const fileContent = await fs.promises.readFile(filePath);
+        res.end(fileContent);
+        return;
       }
-      return;
     }
 
     // Handle all other requests with Next.js

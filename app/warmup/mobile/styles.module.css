@@ -1,3 +1,67 @@
+/* Mobile app-like styles */
+.container {
+  width: 100vw;
+  height: 100vh;
+  height: calc(var(--vh, 1vh) * 100);
+  position: fixed;
+  top: 0;
+  left: 0;
+  background-color: #231F20;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  /* Handle safe areas for notched devices */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  /* Safari specific */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.gameContainer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.gameWrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* Hide scrollbars but keep functionality */
+.container::-webkit-scrollbar {
+  display: none;
+}
+
+/* Loading styles */
 .loadingContainer {
   position: fixed;
   top: 0;
@@ -7,8 +71,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #000;
-  z-index: 50;
+  background-color: #231F20;
+  color: white;
+  font-size: 1.2em;
 }
 
 .loadingText {
@@ -24,49 +89,6 @@
   }
 }
 
-.container {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: linear-gradient(to bottom, #2b1055, #7597de, #ff2975);
-  padding: 0;
-  margin: 0;
-  overflow: hidden;
-}
-
-.main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  padding: 0;
-  margin: 0;
-  min-height: 100vh;
-  max-height: 100vh;
-  overflow: hidden;
-}
-
-.gameContainer {
-  width: 100%;
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.gameWrapper {
-  width: 100%;
-  flex: 1;
-  position: relative;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-}
-
 /* Hide scrollbars on mobile */
 .gameContainer::-webkit-scrollbar {
   display: none;
@@ -75,4 +97,94 @@
 .gameContainer {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Install prompt styles */
+.installPrompt {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+  color: white;
+  text-align: center;
+}
+
+.iosInstallPrompt {
+  max-width: 400px;
+  padding: 20px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.iosInstallPrompt h2 {
+  margin-bottom: 20px;
+  font-size: 1.5em;
+  color: #fff;
+}
+
+.iosInstallPrompt ol {
+  text-align: left;
+  margin: 20px 0;
+  padding-left: 20px;
+}
+
+.iosInstallPrompt li {
+  margin: 10px 0;
+  font-size: 1.1em;
+  line-height: 1.4;
+}
+
+.shareIcon {
+  display: inline-block;
+  font-size: 1.2em;
+  margin: 0 5px;
+  color: #007AFF;
+}
+
+.iosNote {
+  margin-top: 20px;
+  font-size: 0.9em;
+  color: #999;
+  font-style: italic;
+}
+
+/* iOS-specific styles */
+@supports (-webkit-touch-callout: none) {
+  .container {
+    /* Prevent overscroll bounce */
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .gameContainer {
+    /* Ensure proper scaling on iOS */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+}
+
+.fullscreenButton {
+  background-color: #ff8a2c;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 1rem;
+}
+
+.fullscreenButton:hover {
+  background-color: #ff9d4d;
 } 

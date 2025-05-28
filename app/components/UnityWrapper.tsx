@@ -293,21 +293,17 @@ export default function UnityWrapper({
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const checkFont = () => {
-        // Create a test element
-        const testElement = document.createElement('span');
-        testElement.style.fontFamily = 'Lato';
+        const testElement = document.createElement('div');
+        testElement.style.fontFamily = 'Lato, sans-serif';
+        testElement.style.fontSize = '12px';
         testElement.style.position = 'absolute';
         testElement.style.visibility = 'hidden';
-        testElement.style.fontSize = '72px';
         testElement.textContent = 'Test';
         document.body.appendChild(testElement);
 
-        // Get the computed font
         const computedFont = window.getComputedStyle(testElement).fontFamily;
-        
-        // Check if Lato is actually being used
         const isLatoLoaded = computedFont.includes('Lato');
-        
+
         // Get the actual rendered font metrics
         const metrics = {
           width: testElement.offsetWidth,
@@ -315,15 +311,17 @@ export default function UnityWrapper({
           computedStyle: window.getComputedStyle(testElement)
         };
 
-        // Log detailed results
-        console.log('Font detection details:', {
-          computedFont,
-          isLatoLoaded,
-          fallbackFont: !isLatoLoaded ? computedFont : null,
-          metrics,
-          fontFace: document.fonts.check('12px Lato'),
-          allLoadedFonts: Array.from(document.fonts).map(font => font.family)
-        });
+        // Only log if the font status has changed
+        if (isLatoLoaded !== fontLoaded) {
+          console.log('Font detection details:', {
+            computedFont,
+            isLatoLoaded,
+            fallbackFont: !isLatoLoaded ? computedFont : null,
+            metrics,
+            fontFace: document.fonts.check('12px Lato'),
+            allLoadedFonts: Array.from(document.fonts).map(font => font.family)
+          });
+        }
 
         setFontLoaded(isLatoLoaded);
 
@@ -339,9 +337,6 @@ export default function UnityWrapper({
         console.log('Fonts loaded, checking again...');
         checkFont();
       });
-
-      // Check after a delay to ensure everything is settled
-      setTimeout(checkFont, 1000);
     }
   }, []);
 
@@ -398,9 +393,9 @@ export default function UnityWrapper({
         persistentLog('Starting Unity initialization');
         
         const config: UnityConfig = {
-          dataUrl: `${buildUrl}/ProductionGz.data.gz`,
-          frameworkUrl: `${buildUrl}/ProductionGz.framework.js.gz`,
-          codeUrl: `${buildUrl}/ProductionGz.wasm.gz`,
+          dataUrl: `${buildUrl}/ProductionBr.data.br`,
+          frameworkUrl: `${buildUrl}/ProductionBr.framework.js.br`,
+          codeUrl: `${buildUrl}/ProductionBr.wasm.br`,
           streamingAssetsUrl: "StreamingAssets",
           companyName: gameCompany,
           productName: gameName,
@@ -439,7 +434,7 @@ export default function UnityWrapper({
         };
 
         const script = document.createElement('script');
-        script.src = `${buildUrl}/ProductionGz.loader.js`;
+        script.src = `${buildUrl}/ProductionBr.loader.js`;
         script.async = true;
 
         script.onload = () => {
