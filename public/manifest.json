@@ -1,11 +1,11 @@
 {
   "name": "RolloRocket",
   "short_name": "RolloRocket",
-  "description": "Play RolloRocket in fullscreen mode",
+  "description": "Play RolloRocket on your mobile device",
   "start_url": "/warmup/mobile",
   "display": "standalone",
-  "background_color": "#231F20",
-  "theme_color": "#231F20",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "orientation": "landscape",
   "icons": [
     {

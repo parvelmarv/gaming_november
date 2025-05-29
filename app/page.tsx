@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Navbar from './components/Navbar';
 import TimeUnit from './components/TimeUnit';
 import TitleYear from './components/TitleYear';
-import Test from './test';
+import UnityWrapper from './components/UnityWrapper';
 
 export default function Home() {
   const [timeLeft, setTimeLeft] = useState({
@@ -65,7 +65,12 @@ export default function Home() {
             </div>
           </div>
           <TitleYear />
-          <Test />
+          <UnityWrapper 
+            buildUrl="/games/RolloRocket"
+            gameName="RolloRocket"
+            gameVersion="1.0"
+            gameCompany="Your Company"
+          />
         </main>
       </div>
       <style jsx global>{`
