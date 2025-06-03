@@ -26,7 +26,7 @@ export default function UnityWrapper({
   gameCompany = "DefaultCompany"
 }: UnityWrapperProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [unityInstance, setUnityInstance] = useState<any>(null);
   const [memoryWarning, setMemoryWarning] = useState(false);
@@ -52,8 +52,10 @@ export default function UnityWrapper({
       console.error('Failed to store log:', e);
     }
 
-    // Only log errors and warnings to console
-    if (type === 'error' || type === 'warning') {
+    // Log everything to console in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[UnityWrapper] ${message}`);
+    } else if (type === 'error' || type === 'warning') {
       console.log(`[UnityWrapper] ${message}`);
     }
   };
@@ -73,7 +75,9 @@ export default function UnityWrapper({
   useEffect(() => {
     let isMounted = true;
     const container = containerRef.current;
-    if (!container) return;
+    if (!container || !showGame) return;
+
+    persistentLog('Unity effect triggered', 'info');
 
     // Add global error handler
     const handleGlobalError = (event: ErrorEvent) => {
@@ -93,6 +97,15 @@ export default function UnityWrapper({
 
     const loadUnity = async () => {
       try {
+        // Clear any existing Unity instance
+        if (unityInstance) {
+          unityInstance.Quit();
+          setUnityInstance(null);
+        }
+
+        // Clear container
+        container.innerHTML = '';
+        
         persistentLog('Starting Unity initialization');
         
         // Create Unity container structure
@@ -462,7 +475,12 @@ export default function UnityWrapper({
           window.removeEventListener('error', handleGlobalError);
           window.removeEventListener('unhandledrejection', handleUnhandledRejection);
           if (unityInstance) {
-            unityInstance.Quit();
+            try {
+              unityInstance.Quit();
+              setUnityInstance(null);
+            } catch (e) {
+              persistentLog(`Error during Unity cleanup: ${e}`, 'error');
+            }
           }
           if (container) {
             container.innerHTML = '';
@@ -485,14 +503,16 @@ export default function UnityWrapper({
         unityInstance.Quit();
       }
     };
-  }, [buildUrl, width, height, gameName, gameVersion, gameCompany, showGame, unityInstance]);
+  }, [buildUrl, width, height, gameName, gameVersion, gameCompany, showGame]);
 
   const reloadGame = () => {
     setError(null);
     setMemoryWarning(false);
-    setIsLoading(true);
+    setIsLoading(false);
+    setShowGame(false);
     if (unityInstance) {
       unityInstance.Quit();
+      setUnityInstance(null);
     }
     if (containerRef.current) {
       containerRef.current.innerHTML = '';
@@ -522,10 +542,21 @@ export default function UnityWrapper({
       {!showGame ? (
         <div className="flex items-center justify-center min-h-[540px] bg-transparent">
           <button
-            onClick={() => setShowGame(true)}
-            className="bg-[#ff8a2c] text-white px-8 py-4 rounded-lg hover:bg-[#ff7a1c] transition-all transform hover:scale-105 font-press-start text-lg tracking-wider shadow-[0_4px_0_#ff6a1c] hover:shadow-[0_6px_0_#ff6a1c] hover:-translate-y-1 border-2 border-[#ff9a3c] [text-shadow:_2px_2px_0_rgb(0_0_0_/_40%)]"
+            onClick={() => {
+              persistentLog('Start button clicked', 'info');
+              if (!isLoading) {
+                setShowGame(true);
+                setIsLoading(true);
+              }
+            }}
+            disabled={isLoading}
+            className={`bg-[#ff8a2c] text-white px-8 py-4 rounded-lg transition-all transform font-press-start text-lg tracking-wider border-2 border-[#ff9a3c] [text-shadow:_2px_2px_0_rgb(0_0_0_/_40%)] ${
+              isLoading 
+                ? 'opacity-50 cursor-not-allowed' 
+                : 'hover:bg-[#ff7a1c] hover:scale-105 shadow-[0_4px_0_#ff6a1c] hover:shadow-[0_6px_0_#ff6a1c] hover:-translate-y-1'
+            }`}
           >
-            START GAME
+            {isLoading ? 'LOADING...' : 'START GAME'}
           </button>
         </div>
       ) : (
