@@ -17,6 +17,7 @@ const config: Config = {
         'monoton': ['var(--font-monoton)', 'cursive'],
         'tilt-neon': ['var(--font-tilt-neon)', 'cursive'],
         'orbitron': ['var(--font-orbitron)', 'sans-serif'],
+        'press-start': ['var(--font-press-start)', 'monospace'],
       },
       colors: {
         background: "var(--background)",

@@ -43,12 +43,16 @@ export default function WarmupPage() {
   return (
     <div className={styles.container}>
       <Navbar />
+
       <div className={styles.main}>
         {isLandscape ? (
           <div className={styles.gameContainer}>
+            <div className="mt-8 mb-12">
+              <h1 className="text-6xl font-monoton text-[#ff8a2c] text-center glow-effect tracking-wider">WARMUP GAME</h1>
+            </div>
             <div className={styles.gameWrapper}>
               <UnityWrapper 
-                buildUrl="/games/RolloRocket"
+                buildUrl="/games/RolloRocket/Build"
                 gameName="RolloRocket"
                 gameVersion="1.0.0"
                 gameCompany="DefaultCompany"
