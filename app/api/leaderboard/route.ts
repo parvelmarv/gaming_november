@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '../../../lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { timeStamp } from 'console';
 
 interface LeaderboardEntry {
   _id?: ObjectId;
@@ -30,6 +31,9 @@ const rateLimit = new Map<string, number[]>();
 // Helper: Check if IP is within rate limit
 const checkRateLimit = (ip: string): boolean => {
   const now = Date.now();
+
+  cleanupRateLimits();
+
   if (!rateLimit.has(ip)) {
     rateLimit.set(ip, []);
   }
@@ -44,6 +48,20 @@ const checkRateLimit = (ip: string): boolean => {
   rateLimit.set(ip, recentRequests);
   return true;
 };
+
+const cleanupRateLimits = () => {
+  const now = Date.now();
+  for (const [ip, timestamps] of rateLimit.entries()) {
+    const recentRequests = timestamps.filter(
+      (timestamp) => now - timestamp <= rateLimitWindow
+    );
+    if (recentRequests.length === 0) {
+      rateLimit.delete(ip);
+    } else {
+      rateLimit.set(ip, recentRequests);
+    }
+  }
+}
 
 // Helper: Validate score
 const validateScore = (score: { playerName: string; time: number }): boolean => {
@@ -75,7 +93,10 @@ export async function GET(request: NextRequest) {
   }
 
   // Rate limit check
-  const ip = request.headers.get('x-forwarded-for') || request.ip || '';
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
+
   if (!checkRateLimit(ip)) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
@@ -136,7 +157,10 @@ export async function POST(request: NextRequest) {
   }
 
   // Rate limit check
-  const ip = request.headers.get('x-forwarded-for') || request.ip || '';
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
+
   if (!checkRateLimit(ip)) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
@@ -231,7 +255,10 @@ export async function DELETE(request: NextRequest) {
   }
 
   // Rate limit check
-  const ip = request.headers.get('x-forwarded-for') || request.ip || '';
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
+
   if (!checkRateLimit(ip)) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }

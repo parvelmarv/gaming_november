@@ -485,7 +485,7 @@ export default function UnityWrapper({
         unityInstance.Quit();
       }
     };
-  }, [buildUrl, width, height, gameName, gameVersion, gameCompany, showGame]);
+  }, [buildUrl, width, height, gameName, gameVersion, gameCompany, showGame, unityInstance]);
 
   const reloadGame = () => {
     setError(null);
