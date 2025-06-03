@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Monoton, Orbitron, Press_Start_2P, Lato, Tilt_Neon } from 'next/font/google';
 import { Inter } from 'next/font/google';
+import MobileWarning from './components/MobileWarning';
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -47,7 +48,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Warmup Game',
-  description: 'Warmup Game PWA',
+  description: 'Warmup Game',
   manifest: '/manifest.json',
   themeColor: '#231F20',
   appleWebApp: {
@@ -70,7 +71,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -79,8 +80,9 @@ export default function RootLayout({
         <link rel="apple-touch-startup-image" href="/splash.png" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${monoton.variable} ${pressStart2P.variable} ${orbitron.variable} ${lato.variable} ${tiltNeon.variable} antialiased bg-black`}
+        className={`${geistSans.variable} ${geistMono.variable} ${monoton.variable} ${pressStart2P.variable} ${orbitron.variable} ${lato.variable} ${tiltNeon.variable} ${inter.className} antialiased bg-black`}
       >
+        <MobileWarning />
         {children}
       </body>
     </html>
