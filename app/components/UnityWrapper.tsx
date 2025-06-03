@@ -32,6 +32,8 @@ export default function UnityWrapper({
   const [memoryWarning, setMemoryWarning] = useState(false);
   const [showGame, setShowGame] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [currentGameVersion, setCurrentGameVersion] = useState<number>(0);
+  const [isVersionChecked, setIsVersionChecked] = useState(false);
 
   // Persistent logging function
   const persistentLog = (message: string, type: 'info' | 'error' | 'warning' = 'info') => {
@@ -72,10 +74,47 @@ export default function UnityWrapper({
     }
   }, []);
 
+  // Check game version
   useEffect(() => {
+    const checkVersion = async () => {
+      try {
+        const response = await fetch('/game-version.json');
+        const data = await response.json();
+        const storedVersion = localStorage.getItem('gameVersion');
+        
+        // Always set the current version
+        setCurrentGameVersion(data.version);
+        
+        if (!storedVersion || parseInt(storedVersion) < data.version) {
+          // Clear Unity cache
+          if (unityInstance) {
+            unityInstance.Quit();
+            setUnityInstance(null);
+          }
+          if (containerRef.current) {
+            containerRef.current.innerHTML = '';
+          }
+          // Store new version
+          localStorage.setItem('gameVersion', data.version.toString());
+          persistentLog(`Game version updated to ${data.version}`);
+        }
+      } catch (e) {
+        persistentLog(`Error checking game version: ${e}`, 'error');
+      } finally {
+        setIsVersionChecked(true);
+      }
+    };
+
+    checkVersion();
+  }, []);
+
+  // Only load Unity after version check
+  useEffect(() => {
+    if (!isVersionChecked || !showGame) return;
+    
     let isMounted = true;
     const container = containerRef.current;
-    if (!container || !showGame) return;
+    if (!container) return;
 
     persistentLog('Unity effect triggered', 'info');
 
