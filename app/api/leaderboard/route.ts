@@ -7,6 +7,7 @@ interface LeaderboardEntry {
   _id?: ObjectId;
   playerName: string;
   time: number;
+  level: number;
   createdAt: Date;
 }
 
@@ -115,7 +116,11 @@ export async function GET(request: NextRequest) {
     const db = client.db(dbName as string);
     const collection = db.collection(collectionName as string);
 
-    const scores = await collection.find<LeaderboardEntry>({})
+    // Get level from URL parameters
+    const { searchParams } = new URL(request.url);
+    const level = parseInt(searchParams.get('level') || '1');
+
+    const scores = await collection.find<LeaderboardEntry>({ level })
       .sort({ time: 1 })
       .limit(displayScores)
       .toArray();
@@ -123,6 +128,7 @@ export async function GET(request: NextRequest) {
     const formattedScores = scores.map(score => ({
       playerName: score.playerName,
       time: score.time,
+      level: score.level,
       createdAt: score.createdAt.toISOString()
     }));
     
@@ -173,13 +179,13 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { playerName, time } = body;
+    const { playerName, time, level = 1 } = body;
 
     // Input validation
     if (!playerName || typeof time !== 'number' || !validateScore({ playerName, time })) {
       return NextResponse.json({ 
         error: "Invalid score data",
-        received: { playerName, time }
+        received: { playerName, time, level }
       }, { status: 400 });
     }
 
@@ -187,9 +193,9 @@ export async function POST(request: NextRequest) {
     const db = client.db(dbName as string);
     const collection = db.collection(collectionName as string);
 
-    const count = await collection.countDocuments();
+    const count = await collection.countDocuments({ level });
     if (count >= maxScores) {
-      const worstScore = await collection.find<LeaderboardEntry>({})
+      const worstScore = await collection.find<LeaderboardEntry>({ level })
         .sort({ time: -1 })
         .limit(1)
         .next();
@@ -201,13 +207,14 @@ export async function POST(request: NextRequest) {
     const newScore: LeaderboardEntry = {
       playerName,
       time,
+      level,
       createdAt: new Date(),
     };
 
     await collection.insertOne(newScore);
 
     if (count + 1 > maxScores) {
-      const worstScore = await collection.find<LeaderboardEntry>({})
+      const worstScore = await collection.find<LeaderboardEntry>({ level })
         .sort({ time: -1 })
         .limit(1)
         .next();
@@ -221,6 +228,7 @@ export async function POST(request: NextRequest) {
       score: {
         playerName,
         time,
+        level,
         createdAt: newScore.createdAt.toISOString()
       }
     }, { status: 201 });
