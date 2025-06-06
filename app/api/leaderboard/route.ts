@@ -73,6 +73,7 @@ const validateScore = (score: { playerName: string; time: number }): boolean => 
 const addCorsHeaders = (response: NextResponse, origin: string | null) => {
   const allowedOrigins = [
     "http://localhost:3000",
+    "http://localhost:3001",
     "http://localhost:5173",
     "https://www.povelc.com",
     'https://parvelmarv.itch.io',

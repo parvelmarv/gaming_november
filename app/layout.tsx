@@ -49,8 +49,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Warmup Game',
-  description: 'Warmup Game',
-  manifest: '/manifest.json',
+  description: 'A fun warmup game',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -79,6 +78,8 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Warmup Game" />
+        <meta name="theme-color" content="#231F20" />
+        <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         <link rel="apple-touch-startup-image" href="/splash.png" />
         <Script id="service-worker-registration" strategy="afterInteractive">
