@@ -69,8 +69,8 @@ const validateScore = (score: { playerName: string; time: number }): boolean => 
   return score.time > 0 && score.time <= 300.0;
 };
 
-export async function GET(request: NextRequest) {
-  const origin = request.headers.get('origin');
+// Helper: Add CORS headers to response
+const addCorsHeaders = (response: NextResponse, origin: string | null) => {
   const allowedOrigins = [
     "http://localhost:3000",
     "http://localhost:5173",
@@ -78,20 +78,20 @@ export async function GET(request: NextRequest) {
     'https://parvelmarv.itch.io',
     'https://html-classic.itch.zone',
     'https://www.gamingnovember.com'
-    
   ];
 
-  if (allowedOrigins.includes(origin as string)) {
-    return new NextResponse(null, {
-      status: 200,
-      headers: {
-        'Access-Control-Allow-Origin': origin as string,
-        'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, x-api-key',
-        'Access-Control-Max-Age': '86400',
-      },
-    });
+  if (origin && allowedOrigins.includes(origin)) {
+    response.headers.set('Access-Control-Allow-Origin', origin);
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, x-api-key');
+    response.headers.set('Access-Control-Max-Age', '86400');
   }
+
+  return response;
+};
+
+export async function GET(request: NextRequest) {
+  const origin = request.headers.get('origin');
 
   // Rate limit check
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ||
@@ -99,16 +99,22 @@ export async function GET(request: NextRequest) {
       'unknown';
 
   if (!checkRateLimit(ip)) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    return addCorsHeaders(
+      NextResponse.json({ error: "Too many requests" }, { status: 429 }),
+      origin
+    );
   }
 
   // API key validation
   const requestApiKey = request.headers.get('x-api-key');
   if (requestApiKey !== apiKey) {
-    return NextResponse.json({ 
-      error: "Unauthorized",
-      message: "Invalid API key"
-    }, { status: 401 });
+    return addCorsHeaders(
+      NextResponse.json({ 
+        error: "Unauthorized",
+        message: "Invalid API key"
+      }, { status: 401 }),
+      origin
+    );
   }
 
   try {
@@ -118,7 +124,7 @@ export async function GET(request: NextRequest) {
 
     // Get level from URL parameters
     const { searchParams } = new URL(request.url);
-    const level = parseInt(searchParams.get('level') || '1');
+    const level = parseInt(searchParams.get('level') || '0');
 
     const scores = await collection.find<LeaderboardEntry>({ level })
       .sort({ time: 1 })
@@ -132,35 +138,18 @@ export async function GET(request: NextRequest) {
       createdAt: score.createdAt.toISOString()
     }));
     
-    return NextResponse.json(formattedScores);
+    return addCorsHeaders(NextResponse.json(formattedScores), origin);
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return addCorsHeaders(
+      NextResponse.json({ error: "Server error" }, { status: 500 }),
+      origin
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
   const origin = request.headers.get('origin');
-  const allowedOrigins = [
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "https://www.povelc.com",
-    'https://parvelmarv.itch.io/rollo-rocket',
-    'https://html-classic.itch.zone',
-    'https://www.gamingnovember.com'
-  ];
-
-  if (allowedOrigins.includes(origin as string)) {
-    return new NextResponse(null, {
-      status: 200,
-      headers: {
-        'Access-Control-Allow-Origin': origin as string,
-        'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, x-api-key',
-        'Access-Control-Max-Age': '86400',
-      },
-    });
-  }
 
   // Rate limit check
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ||
@@ -168,25 +157,34 @@ export async function POST(request: NextRequest) {
       'unknown';
 
   if (!checkRateLimit(ip)) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    return addCorsHeaders(
+      NextResponse.json({ error: "Too many requests" }, { status: 429 }),
+      origin
+    );
   }
 
   // API key validation
   const requestApiKey = request.headers.get('x-api-key');
   if (requestApiKey !== apiKey) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return addCorsHeaders(
+      NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+      origin
+    );
   }
 
   try {
     const body = await request.json();
-    const { playerName, time, level = 1 } = body;
+    const { playerName, time, level = 0 } = body;
 
     // Input validation
     if (!playerName || typeof time !== 'number' || !validateScore({ playerName, time })) {
-      return NextResponse.json({ 
-        error: "Invalid score data",
-        received: { playerName, time, level }
-      }, { status: 400 });
+      return addCorsHeaders(
+        NextResponse.json({ 
+          error: "Invalid score data",
+          received: { playerName, time, level }
+        }, { status: 400 }),
+        origin
+      );
     }
 
     const client = await clientPromise;
@@ -200,7 +198,10 @@ export async function POST(request: NextRequest) {
         .limit(1)
         .next();
       if (worstScore && worstScore.time <= time) {
-        return NextResponse.json({ message: "Score not in top scores" });
+        return addCorsHeaders(
+          NextResponse.json({ message: "Score not in top scores" }),
+          origin
+        );
       }
     }
 
@@ -223,18 +224,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ 
-      message: "Score submitted successfully",
-      score: {
-        playerName,
-        time,
-        level,
-        createdAt: newScore.createdAt.toISOString()
-      }
-    }, { status: 201 });
+    return addCorsHeaders(
+      NextResponse.json({ 
+        message: "Score submitted successfully",
+        score: {
+          playerName,
+          time,
+          level,
+          createdAt: newScore.createdAt.toISOString()
+        }
+      }, { status: 201 }),
+      origin
+    );
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return addCorsHeaders(
+      NextResponse.json({ error: "Server error" }, { status: 500 }),
+      origin
+    );
   }
 }
 
@@ -292,27 +299,5 @@ export async function DELETE(request: NextRequest) {
 
 export async function OPTIONS(request: NextRequest) {
   const origin = request.headers.get('origin');
-  const allowedOrigins = [
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "https://www.povelc.com",
-    'https://parvelmarv.itch.io/rollo-rocket',
-    'https://html-classic.itch.zone',
-    'https://*.itch.zone',
-    'https://*.itch.io'
-  ];
-
-  if (allowedOrigins.includes(origin as string)) {
-    return new NextResponse(null, {
-      status: 200,
-      headers: {
-        'Access-Control-Allow-Origin': origin as string,
-        'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, x-api-key',
-        'Access-Control-Max-Age': '86400',
-      },
-    });
-  }
-
-  return new NextResponse(null, { status: 200 });
+  return addCorsHeaders(new NextResponse(null, { status: 200 }), origin);
 } 

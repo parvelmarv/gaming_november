@@ -1,9 +1,10 @@
 import "./globals.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Monoton, Orbitron, Press_Start_2P, Lato, Tilt_Neon } from 'next/font/google';
 import { Inter } from 'next/font/google';
 import MobileWarning from './components/MobileWarning';
+import Script from 'next/script';
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -50,19 +51,20 @@ export const metadata: Metadata = {
   title: 'Warmup Game',
   description: 'Warmup Game',
   manifest: '/manifest.json',
-  themeColor: '#231F20',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'Warmup Game',
   },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-    viewportFit: 'cover',
-  },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+  themeColor: '#231F20',
 };
 
 export default function RootLayout({
@@ -74,10 +76,24 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Warmup Game" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         <link rel="apple-touch-startup-image" href="/splash.png" />
+        <Script id="service-worker-registration" strategy="afterInteractive">
+          {`
+            if ('serviceWorker' in navigator) {
+              window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                  console.log('ServiceWorker registration successful');
+                }, function(err) {
+                  console.log('ServiceWorker registration failed: ', err);
+                });
+              });
+            }
+          `}
+        </Script>
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${monoton.variable} ${pressStart2P.variable} ${orbitron.variable} ${lato.variable} ${tiltNeon.variable} ${inter.className} antialiased bg-black`}
