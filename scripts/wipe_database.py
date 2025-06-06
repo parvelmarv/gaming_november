@@ -26,18 +26,21 @@ def wipe_database():
             print(f"Error: Collection '{collection_name}' not found in database '{db_name}'")
             return
         
+        # Get count of documents before deletion
+        doc_count = db[collection_name].count_documents({})
+        
         # Ask for confirmation
-        print(f"\nWARNING: This will permanently delete all data in collection '{collection_name}'!")
+        print(f"\nWARNING: This will permanently delete all {doc_count} documents in collection '{collection_name}'!")
         confirmation = input("\nType 'DELETE' to confirm: ")
         
         if confirmation != 'DELETE':
             print("Operation cancelled")
             return
         
-        # Delete the collection
-        db[collection_name].drop()
-        print(f"Deleted collection: {collection_name}")
-        print("\nCollection wipe completed successfully!")
+        # Delete all documents in the collection
+        result = db[collection_name].delete_many({})
+        print(f"Deleted {result.deleted_count} documents from collection: {collection_name}")
+        print("\nDocument deletion completed successfully!")
         
     except Exception as e:
         print(f"Error: {str(e)}")
