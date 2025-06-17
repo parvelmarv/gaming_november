@@ -1,17 +1,12 @@
 import { S3Client } from '@aws-sdk/client-s3';
 
 // Use NEXT_PUBLIC_ prefix for client-side variables
-const R2_ACCOUNT_ID = process.env.NEXT_PUBLIC_CLOUDFLARE_ACCOUNT_ID;
-const R2_ACCESS_KEY_ID = process.env.NEXT_PUBLIC_R2_ACCESS_KEY_ID;
-const R2_SECRET_ACCESS_KEY = process.env.NEXT_PUBLIC_R2_SECRET_ACCESS_KEY;
-const R2_BUCKET_NAME = process.env.NEXT_PUBLIC_R2_BUCKET_NAME;
+export const R2_ACCOUNT_ID = process.env.NEXT_PUBLIC_CLOUDFLARE_ACCOUNT_ID;
+export const R2_ACCESS_KEY_ID = process.env.NEXT_PUBLIC_R2_ACCESS_KEY_ID;
+export const R2_SECRET_ACCESS_KEY = process.env.NEXT_PUBLIC_R2_SECRET_ACCESS_KEY;
+export const R2_BUCKET_NAME = process.env.NEXT_PUBLIC_R2_BUCKET_NAME;
 
-console.log('R2 Config:', {
-  accountId: R2_ACCOUNT_ID,
-  accessKeyId: R2_ACCESS_KEY_ID ? 'Set' : 'Not set',
-  secretKey: R2_SECRET_ACCESS_KEY ? 'Set' : 'Not set',
-  bucketName: R2_BUCKET_NAME
-});
+
 
 if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY || !R2_BUCKET_NAME) {
   throw new Error('Missing required R2 environment variables');

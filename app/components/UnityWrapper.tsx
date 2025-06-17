@@ -137,24 +137,11 @@ export default function UnityWrapper({
 
     const loadUnity = async () => {
       try {
-        // Load Unity files from R2
-        const [loaderData, dataData, frameworkData, wasmData] = await Promise.all([
-          downloadGameFile(gameName, 'ProductionBr.loader.js'),
-          downloadGameFile(gameName, 'ProductionBr.data.br'),
-          downloadGameFile(gameName, 'ProductionBr.framework.js.br'),
-          downloadGameFile(gameName, 'ProductionBr.wasm.br')
-        ]);
-
-        // Create blob URLs for the files
-        const loaderBlob = new Blob([loaderData], { type: 'application/javascript' });
-        const dataBlob = new Blob([dataData], { type: 'application/octet-stream' });
-        const frameworkBlob = new Blob([frameworkData], { type: 'application/javascript' });
-        const wasmBlob = new Blob([wasmData], { type: 'application/wasm' });
-
-        const loaderUrl = URL.createObjectURL(loaderBlob);
-        const dataUrl = URL.createObjectURL(dataBlob);
-        const frameworkUrl = URL.createObjectURL(frameworkBlob);
-        const wasmUrl = URL.createObjectURL(wasmBlob);
+        // Use API routes to serve files with proper headers
+        const loaderUrl = '/api/game-files/Production.loader.js';
+        const dataUrl = '/api/game-files/Production.data';
+        const frameworkUrl = '/api/game-files/Production.framework.js';
+        const wasmUrl = '/api/game-files/Production.wasm';
 
         // Clear any existing Unity instance
         if (unityInstance) {
@@ -356,10 +343,6 @@ export default function UnityWrapper({
               if (progressBar instanceof HTMLElement) {
                 progressBar.style.width = `${100 * progress}%`;
               }
-            },
-            headers: {
-              'Accept-Encoding': 'br, gzip, deflate',
-              'Accept': '*/*'
             }
           };
 
