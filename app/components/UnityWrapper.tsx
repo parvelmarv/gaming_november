@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { downloadGameFile } from '@/lib/gameStorage';
 
 interface UnityWrapperProps {
   buildUrl: string;
@@ -136,6 +137,25 @@ export default function UnityWrapper({
 
     const loadUnity = async () => {
       try {
+        // Load Unity files from R2
+        const [loaderData, dataData, frameworkData, wasmData] = await Promise.all([
+          downloadGameFile(gameName, 'ProductionBr.loader.js'),
+          downloadGameFile(gameName, 'ProductionBr.data.br'),
+          downloadGameFile(gameName, 'ProductionBr.framework.js.br'),
+          downloadGameFile(gameName, 'ProductionBr.wasm.br')
+        ]);
+
+        // Create blob URLs for the files
+        const loaderBlob = new Blob([loaderData], { type: 'application/javascript' });
+        const dataBlob = new Blob([dataData], { type: 'application/octet-stream' });
+        const frameworkBlob = new Blob([frameworkData], { type: 'application/javascript' });
+        const wasmBlob = new Blob([wasmData], { type: 'application/wasm' });
+
+        const loaderUrl = URL.createObjectURL(loaderBlob);
+        const dataUrl = URL.createObjectURL(dataBlob);
+        const frameworkUrl = URL.createObjectURL(frameworkBlob);
+        const wasmUrl = URL.createObjectURL(wasmBlob);
+
         // Clear any existing Unity instance
         if (unityInstance) {
           unityInstance.Quit();
@@ -288,17 +308,17 @@ export default function UnityWrapper({
 
         // Load Unity loader
         const script = document.createElement('script');
-        script.src = `${buildUrl}/ProductionBr.loader.js`;
-        persistentLog(`Attempting to load Unity from: ${script.src}`, 'info');
+        script.src = loaderUrl;
+        persistentLog(`Attempting to load Unity from R2`, 'info');
         script.async = true;
 
         script.onload = () => {
           persistentLog('Unity loader script loaded');
           
           const config = {
-            dataUrl: `${buildUrl}/ProductionBr.data.br`,
-            frameworkUrl: `${buildUrl}/ProductionBr.framework.js.br`,
-            codeUrl: `${buildUrl}/ProductionBr.wasm.br`,
+            dataUrl: dataUrl,
+            frameworkUrl: frameworkUrl,
+            codeUrl: wasmUrl,
             streamingAssetsUrl: "StreamingAssets",
             companyName: gameCompany,
             productName: gameName,
@@ -434,54 +454,7 @@ export default function UnityWrapper({
           setIsLoading(false);
         };
 
-        // Add error handling for file loading
-        const checkFileExists = async (url: string) => {
-          try {
-            const response = await fetch(url, { 
-              method: 'HEAD',
-              headers: {
-                'Accept-Encoding': 'br, gzip, deflate',
-                'Accept': '*/*'
-              }
-            });
-            if (!response.ok) {
-              persistentLog(`File not found: ${url}`, 'error');
-              return false;
-            }
-            return true;
-          } catch (e) {
-            persistentLog(`Error checking file ${url}: ${e}`, 'error');
-            return false;
-          }
-        };
-
-        // Check if all required files exist
-        const checkFiles = async () => {
-          const files = [
-            `${buildUrl}/ProductionBr.loader.js`,
-            `${buildUrl}/ProductionBr.data.br`,
-            `${buildUrl}/ProductionBr.framework.js.br`,
-            `${buildUrl}/ProductionBr.wasm.br`
-          ];
-
-          for (const file of files) {
-            const exists = await checkFileExists(file);
-            if (!exists) {
-              persistentLog(`Required file missing: ${file}`, 'error');
-              setError(`Failed to load game files. Missing: ${file.split('/').pop()}`);
-              setIsLoading(false);
-              return false;
-            }
-          }
-          return true;
-        };
-
-        // Check files before loading
-        checkFiles().then(exists => {
-          if (exists) {
-            document.body.appendChild(script);
-          }
-        });
+        document.body.appendChild(script);
 
         // Add memory monitoring
         const memoryInterval = setInterval(() => {
@@ -525,10 +498,15 @@ export default function UnityWrapper({
             container.innerHTML = '';
           }
           style.remove();
+          // Clean up blob URLs
+          URL.revokeObjectURL(loaderUrl);
+          URL.revokeObjectURL(dataUrl);
+          URL.revokeObjectURL(frameworkUrl);
+          URL.revokeObjectURL(wasmUrl);
         };
-      } catch (e: any) {
-        persistentLog(`Error in Unity initialization: ${e.message}`, 'error');
-        setError(`Failed to initialize game: ${e.message}`);
+      } catch (error) {
+        persistentLog(`Error loading Unity: ${error}`, 'error');
+        setError('Failed to load game files');
         setIsLoading(false);
       }
     };
