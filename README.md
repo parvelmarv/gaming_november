@@ -1,6 +1,6 @@
 # Gaming November: RolloRocket
 
-This is a personal game project featuring **RolloRocket**, a Unity WebGL game embedded in a modern Next.js 16 web application.
+For the past 4 years, my friends and I have dedicated the month of November to escaping the after-work grind, exploring new titles, and reconnecting with our love for gaming. This year, I built RolloRocket—a custom Unity-based warmup game—to help us shake off the workday brain and get into the zone before our main sessions. It serves as our digital palette cleanser, complete with a leaderboard to keep the competitive spirit alive. 
 
 ## Tech Stack
 
