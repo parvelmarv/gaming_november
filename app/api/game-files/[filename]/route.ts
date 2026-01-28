@@ -3,10 +3,10 @@ import { downloadGameFile } from '@/lib/gameStorage';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { filename: string } }
+  context: { params: Promise<{ filename: string }> }
 ) {
   try {
-    const filename = params.filename;
+    const { filename } = await context.params;
     
 
     

@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server';
 // List of paths that should have mobile versions
 const MOBILE_PATHS = ['/warmup'];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   
   // Skip if already on mobile path
