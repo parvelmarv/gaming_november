@@ -48,7 +48,7 @@ export default function WarmupPage() {
         {isLandscape ? (
           <div className={styles.gameContainer}>
             <div className="mt-8 mb-12">
-              <h1 className="text-6xl font-monoton text-[#ff8a2c] text-center glow-effect tracking-wider">WARMUP GAME</h1>
+              <h1 className="text-6xl font-monoton text-[#ff8a2c] text-center glow-effect tracking-wider">ROLLO ROCKET</h1>
             </div>
             <div className={styles.gameWrapper}>
               <UnityWrapper 

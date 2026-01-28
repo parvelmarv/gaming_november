@@ -34,15 +34,7 @@ export default function Navbar() {
                 href="/warmup" 
                 className="block py-2 px-3 text-white/90 hover:text-white font-geist-sans text-sm font-medium tracking-wide transition-all duration-300 hover:bg-white/5 rounded-lg"
               >
-                Warm Up
-              </Link>
-            </li>
-            <li>
-              <Link 
-                href="/leaderboard" 
-                className="block py-2 px-3 text-white/90 hover:text-white font-geist-sans text-sm font-medium tracking-wide transition-all duration-300 hover:bg-white/5 rounded-lg"
-              >
-                Results 2024
+                RolloRocket
               </Link>
             </li>
           </ul>
