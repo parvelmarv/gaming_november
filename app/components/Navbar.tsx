@@ -29,14 +29,7 @@ export default function Navbar() {
         
         <div className={`${isOpen ? 'block' : 'hidden'} w-full md:block md:w-auto`}>
           <ul className="flex flex-col p-4 md:p-0 mt-4 md:flex-row md:space-x-8 md:mt-0">
-            <li>
-              <Link 
-                href="/warmup" 
-                className="block py-2 px-3 text-white/90 hover:text-white font-geist-sans text-sm font-medium tracking-wide transition-all duration-300 hover:bg-white/5 rounded-lg"
-              >
-                RolloRocket
-              </Link>
-            </li>
+            {/* Links removed as game is on home page */}
           </ul>
         </div>
       </div>
