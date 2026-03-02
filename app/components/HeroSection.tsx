@@ -46,7 +46,7 @@ export default function HeroSection({ onScrollClick, showScrollCTA }: HeroSectio
 
   return (
     <section className="h-screen w-full flex flex-col items-center justify-center relative px-6 py-20 snap-start snap-always">
-      <div className="flex flex-row gap-8 sm:gap-16 md:gap-24 lg:gap-32 justify-center mb-16 animate-fade-in">
+      <div className="flex flex-row gap-4 sm:gap-8 md:gap-12 lg:gap-16 justify-center mb-16 animate-fade-in">
         <TimeUnit value={timeLeft.days} label="DAYS" />
         <TimeUnit value={timeLeft.hours} label="HOURS" />
         <TimeUnit value={timeLeft.minutes} label="MINUTES" />
