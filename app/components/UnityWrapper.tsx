@@ -314,7 +314,7 @@ export default function UnityWrapper({
         </div>
       )}
       {!showGame ? (
-        <div className="flex items-center justify-center min-h-[540px] bg-transparent">
+        <div className="flex items-center justify-center h-full w-full absolute inset-0 bg-transparent">
           <button
             onClick={() => {
               if (!isLoading) {

@@ -42,7 +42,7 @@ export default function GameSection() {
         ROLLO ROCKET
       </h1>
 
-      <div className="w-full max-w-6xl aspect-video relative bg-black rounded-xl p-4 shadow-[0_0_40px_rgba(255,41,117,0.2)] border border-[#ff2975]/30 backdrop-blur-xl group hover:shadow-[0_0_60px_rgba(0,245,255,0.2)] transition-all duration-500 my-10 overflow-hidden">
+      <div className="w-full max-w-6xl aspect-video relative bg-black rounded-xl p-4 shadow-[0_0_40px_rgba(255,41,117,0.2)] border border-[#ff2975]/30 backdrop-blur-xl group hover:shadow-[0_0_60px_rgba(0,245,255,0.2)] transition-all duration-500 my-10 overflow-hidden" style={{ maxHeight: '60vh', maxWidth: '106vh' }}>
         <div className="relative w-full h-full rounded-lg overflow-hidden bg-black ring-1 ring-white/5">
           {isLandscape ? (
             <div className="w-full h-full">

@@ -46,34 +46,34 @@ export default function HeroSection({ onScrollClick, showScrollCTA }: HeroSectio
 
   return (
     <section className="h-screen w-full flex flex-col items-center justify-center relative px-6 py-20 snap-start snap-always">
-      <div className="flex flex-row w-full max-w-[90vw] justify-center gap-[2vw] mb-[8vh] animate-fade-in">
+      <div className="flex flex-row w-full max-w-[90vw] justify-center gap-[2vw] 2xl:gap-12 mb-[8vh] animate-fade-in">
         <TimeUnit 
           value={timeLeft.days} 
           label="DAYS" 
-          numberClassName="text-[10vw] lg:text-[8rem] font-orbitron text-white glow-effect leading-none"
-          labelClassName="text-[2vw] lg:text-xl font-roboto-mono font-bold text-white tracking-[0.2em] lg:tracking-[0.4em]"
-          containerClassName="flex flex-col items-center w-[20vw] lg:w-[180px]"
+          numberClassName="text-[7vw] 2xl:text-[7rem] font-orbitron text-white glow-effect leading-none"
+          labelClassName="text-[1.2vw] 2xl:text-xl font-roboto-mono font-bold text-white tracking-[0.2em] 2xl:tracking-[0.4em]"
+          containerClassName="flex flex-col items-center w-[21vw] 2xl:w-[200px]"
         />
         <TimeUnit 
           value={timeLeft.hours} 
           label="HOURS" 
-          numberClassName="text-[10vw] lg:text-[8rem] font-orbitron text-white glow-effect leading-none"
-          labelClassName="text-[2vw] lg:text-xl font-roboto-mono font-bold text-white tracking-[0.2em] lg:tracking-[0.4em]"
-          containerClassName="flex flex-col items-center w-[20vw] lg:w-[180px]"
+          numberClassName="text-[7vw] 2xl:text-[7rem] font-orbitron text-white glow-effect leading-none"
+          labelClassName="text-[1.2vw] 2xl:text-xl font-roboto-mono font-bold text-white tracking-[0.2em] 2xl:tracking-[0.4em]"
+          containerClassName="flex flex-col items-center w-[21vw] 2xl:w-[200px]"
         />
         <TimeUnit 
           value={timeLeft.minutes} 
           label="MINUTES" 
-          numberClassName="text-[10vw] lg:text-[8rem] font-orbitron text-white glow-effect leading-none"
-          labelClassName="text-[2vw] lg:text-xl font-roboto-mono font-bold text-white tracking-[0.2em] lg:tracking-[0.4em]"
-          containerClassName="flex flex-col items-center w-[20vw] lg:w-[180px]"
+          numberClassName="text-[7vw] 2xl:text-[7rem] font-orbitron text-white glow-effect leading-none"
+          labelClassName="text-[1.2vw] 2xl:text-xl font-roboto-mono font-bold text-white tracking-[0.2em] 2xl:tracking-[0.4em]"
+          containerClassName="flex flex-col items-center w-[21vw] 2xl:w-[200px]"
         />
         <TimeUnit 
           value={timeLeft.seconds} 
           label="SECONDS" 
-          numberClassName="text-[10vw] lg:text-[8rem] font-orbitron text-white glow-effect leading-none"
-          labelClassName="text-[2vw] lg:text-xl font-roboto-mono font-bold text-white tracking-[0.2em] lg:tracking-[0.4em]"
-          containerClassName="flex flex-col items-center w-[20vw] lg:w-[180px]"
+          numberClassName="text-[7vw] 2xl:text-[7rem] font-orbitron text-white glow-effect leading-none"
+          labelClassName="text-[1.2vw] 2xl:text-xl font-roboto-mono font-bold text-white tracking-[0.2em] 2xl:tracking-[0.4em]"
+          containerClassName="flex flex-col items-center w-[21vw] 2xl:w-[200px]"
         />
       </div>
 
