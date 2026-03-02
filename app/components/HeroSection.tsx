@@ -46,11 +46,35 @@ export default function HeroSection({ onScrollClick, showScrollCTA }: HeroSectio
 
   return (
     <section className="h-screen w-full flex flex-col items-center justify-center relative px-6 py-20 snap-start snap-always">
-      <div className="flex flex-row gap-4 sm:gap-8 md:gap-12 lg:gap-16 justify-center mb-16 animate-fade-in">
-        <TimeUnit value={timeLeft.days} label="DAYS" />
-        <TimeUnit value={timeLeft.hours} label="HOURS" />
-        <TimeUnit value={timeLeft.minutes} label="MINUTES" />
-        <TimeUnit value={timeLeft.seconds} label="SECONDS" />
+      <div className="flex flex-row w-full max-w-[90vw] justify-center gap-[2vw] mb-[8vh] animate-fade-in">
+        <TimeUnit 
+          value={timeLeft.days} 
+          label="DAYS" 
+          numberClassName="text-[10vw] lg:text-[8rem] font-orbitron text-white glow-effect leading-none"
+          labelClassName="text-[2vw] lg:text-xl font-roboto-mono font-bold text-white tracking-[0.2em] lg:tracking-[0.4em]"
+          containerClassName="flex flex-col items-center w-[20vw] lg:w-[180px]"
+        />
+        <TimeUnit 
+          value={timeLeft.hours} 
+          label="HOURS" 
+          numberClassName="text-[10vw] lg:text-[8rem] font-orbitron text-white glow-effect leading-none"
+          labelClassName="text-[2vw] lg:text-xl font-roboto-mono font-bold text-white tracking-[0.2em] lg:tracking-[0.4em]"
+          containerClassName="flex flex-col items-center w-[20vw] lg:w-[180px]"
+        />
+        <TimeUnit 
+          value={timeLeft.minutes} 
+          label="MINUTES" 
+          numberClassName="text-[10vw] lg:text-[8rem] font-orbitron text-white glow-effect leading-none"
+          labelClassName="text-[2vw] lg:text-xl font-roboto-mono font-bold text-white tracking-[0.2em] lg:tracking-[0.4em]"
+          containerClassName="flex flex-col items-center w-[20vw] lg:w-[180px]"
+        />
+        <TimeUnit 
+          value={timeLeft.seconds} 
+          label="SECONDS" 
+          numberClassName="text-[10vw] lg:text-[8rem] font-orbitron text-white glow-effect leading-none"
+          labelClassName="text-[2vw] lg:text-xl font-roboto-mono font-bold text-white tracking-[0.2em] lg:tracking-[0.4em]"
+          containerClassName="flex flex-col items-center w-[20vw] lg:w-[180px]"
+        />
       </div>
 
       <div className="text-center space-y-4 mb-20">
