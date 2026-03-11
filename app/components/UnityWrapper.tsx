@@ -1,361 +1,430 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface UnityWrapperProps {
-  buildUrl: string;
-  width?: number;
-  height?: number;
-  gameName?: string;
+  gameName?: string; // Name of the game (used for R2 path and display)
+  r2GameName?: string; // Optional: different name in R2 bucket (defaults to gameName)
+  iframeUrl?: string; // Alternative: URL to Unity build (if hosted elsewhere)
+  width?: string;
+  height?: string;
   gameVersion?: string;
   gameCompany?: string;
+  buildUrl?: string; // Kept for compatibility but unused in this implementation
 }
 
 export default function UnityWrapper({ 
-  buildUrl, 
-  width = 960, 
-  height = 540,
   gameName = "RolloRocket",
-  gameVersion = "1.0.0",
-  gameCompany = "DefaultCompany"
+  r2GameName,
+  iframeUrl,
+  width = '100%',
+  height = '100%', // Changed from 600px to 100% to fit container
+  gameVersion = '1.0',
+  gameCompany = 'DefaultCompany',
+  buildUrl
 }: UnityWrapperProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const gameContainerRef = useRef<HTMLDivElement>(null);
+  const scriptRef = useRef<HTMLScriptElement | null>(null);
+  const unityInstanceRef = useRef<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [unityInstance, setUnityInstance] = useState<any>(null);
   const [showGame, setShowGame] = useState(false);
-  const [isVersionChecked, setIsVersionChecked] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const r2Name = r2GameName || gameName;
 
+  // Fake loading progress animation
   useEffect(() => {
-    const checkVersion = async () => {
-      try {
-        const response = await fetch('/game-version.json');
-        const data = await response.json();
-        const storedVersion = localStorage.getItem('gameVersion');
-        
-        if (!storedVersion || parseInt(storedVersion) < data.version) {
-          if (unityInstance) {
-            unityInstance.Quit();
-            setUnityInstance(null);
-          }
-          if (containerRef.current) {
-            containerRef.current.innerHTML = '';
-          }
-          localStorage.setItem('gameVersion', data.version.toString());
-        }
-      } catch (e) {
-        console.error('Error checking game version:', e);
-      } finally {
-        setIsVersionChecked(true);
+    if (!showGame || !isLoading) return;
+
+    let animationFrame: number;
+    let startTime = Date.now();
+    const targetProgress = 0.9; // Get stuck at 90%
+    const duration = 3000; // 3 seconds to reach 90%
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, targetProgress);
+      
+      setLoadingProgress(progress);
+
+      if (progress < targetProgress) {
+        animationFrame = requestAnimationFrame(animate);
       }
     };
 
-    checkVersion();
+    animate();
+
+    return () => {
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
+    };
+  }, [showGame, isLoading]);
+
+  // Jump to 100% when loading is complete
+  useEffect(() => {
+    if (!isLoading && showGame) {
+      setLoadingProgress(1);
+    }
+  }, [isLoading, showGame]);
+
+  // Handle ESC key to exit fullscreen
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && document.fullscreenElement) {
+        document.exitFullscreen();
+      }
+    };
+
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
   }, []);
 
   useEffect(() => {
-    if (!isVersionChecked || !showGame) return;
-    
-    let isMounted = true;
-    const container = containerRef.current;
-    if (!container) return;
+    // If iframeUrl is provided, use simpler iframe approach
+    if (iframeUrl) {
+      setIsLoading(false);
+      return;
+    }
 
+    if (!showGame) {
+      setIsLoading(false);
+      return;
+    }
+
+    // Load Unity WebGL build from R2 via API
     const loadUnity = async () => {
+      if (!containerRef.current) return;
+
+      let isMounted = true;
+
       try {
-        const loaderUrl = '/api/game-files/Production.loader.js';
-        const dataUrl = '/api/game-files/Production.data';
-        const frameworkUrl = '/api/game-files/Production.framework.js';
-        const wasmUrl = '/api/game-files/Production.wasm';
+        // Create canvas and container structure
+        const canvas = document.createElement('canvas');
+        canvas.id = `unity-canvas-${Date.now()}`;
+        canvas.width = 960;
+        canvas.height = 600;
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        canvas.style.display = 'block';
+        canvas.style.background = '#231F20';
+        canvas.tabIndex = -1;
 
-        if (unityInstance) {
-          unityInstance.Quit();
-          setUnityInstance(null);
-        }
+        // Clear container and add canvas
+        containerRef.current.innerHTML = '';
+        containerRef.current.appendChild(canvas);
 
-        container.innerHTML = '';
-        
-        container.innerHTML = `
-          <div id="unity-container" class="unity-desktop">
-            <canvas id="unity-canvas" width="${width}" height="${height}" tabindex="-1"></canvas>
-            <div id="unity-loading-bar">
-              <div id="unity-logo"></div>
-              <div id="unity-progress-bar-empty">
-                <div id="unity-progress-bar-full"></div>
-              </div>
-            </div>
-            <div id="unity-warning"></div>
-          </div>
-        `;
+        // API routes for game files - using Production as the build name
+        const buildName = 'Production';
+        const loaderUrl = `/api/game-files/${buildName}.loader.js?gameName=${r2Name}`;
+        const dataUrl = `/api/game-files/${buildName}.data?gameName=${r2Name}`;
+        const frameworkUrl = `/api/game-files/${buildName}.framework.js?gameName=${r2Name}`;
+        const wasmUrl = `/api/game-files/${buildName}.wasm?gameName=${r2Name}`;
 
-        const style = document.createElement('style');
-        style.textContent = `
-          #unity-container {
-            width: 100%;
-            height: 100%;
-            margin: auto;
-            position: relative;
-            overflow: hidden;
-            background: #231F20;
-          }
-          #unity-canvas {
-            width: 100%;
-            height: 100%;
-            background: #231F20;
-            transform: translateZ(0);
-            backface-visibility: hidden;
-            perspective: 1000;
-            will-change: transform;
-            object-fit: contain;
-            outline: none;
-            border: none;
-          }
-          #unity-loading-bar {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-          }
-          #unity-logo {
-            width: 154px;
-            height: 130px;
-            background: url('${buildUrl}/../TemplateData/unity-logo-dark.png') no-repeat center;
-            margin-bottom: 20px;
-          }
-          #unity-progress-bar-empty {
-            width: 141px;
-            height: 18px;
-            background: url('${buildUrl}/../TemplateData/progress-bar-empty-dark.png') no-repeat center;
-          }
-          #unity-progress-bar-full {
-            width: 0%;
-            height: 18px;
-            background: url('${buildUrl}/../TemplateData/progress-bar-full-dark.png') no-repeat center;
-          }
-          #unity-warning {
-            position: absolute;
-            left: 50%;
-            top: 5%;
-            transform: translate(-50%);
-            background: white;
-            padding: 10px;
-            display: none;
-          }
-          @media (max-width: 960px) {
-            #unity-container {
-              width: 100%;
-              height: 100vh;
-            }
-            #unity-canvas {
-              width: 100%;
-              height: 100%;
-            }
-          }
-          @media (min-width: 961px) {
-            #unity-container {
-              width: 960px;
-              height: 600px;
-            }
-            #unity-canvas {
-              width: 960px;
-              height: 600px;
-            }
-          }
-          :fullscreen #unity-container {
-            width: 100vw !important;
-            height: 100vh !important;
-            margin: 0 !important;
-            padding: 0 !important;
-          }
-          :fullscreen #unity-canvas {
-            width: 100vw !important;
-            height: 100vh !important;
-            margin: 0 !important;
-            padding: 0 !important;
-          }
-        `;
-        document.head.appendChild(style);
-
+        // Load Unity loader script
         const script = document.createElement('script');
         script.src = loaderUrl;
         script.async = true;
-
+        scriptRef.current = script;
+        
         script.onload = () => {
-          const config = {
-            dataUrl: dataUrl,
-            frameworkUrl: frameworkUrl,
-            codeUrl: wasmUrl,
-            streamingAssetsUrl: "StreamingAssets",
-            companyName: gameCompany,
-            productName: gameName,
-            productVersion: gameVersion,
-            showBanner: (msg: string, type: string) => {
-              if (type === 'error') setError(msg);
-            },
-            devicePixelRatio: window.devicePixelRatio || 1,
-            matchWebGLToCanvasSize: true,
-            memorySize: 512,
-            webglContextAttributes: {
-              preserveDrawingBuffer: true,
-              powerPreference: 'high-performance',
-              failIfMajorPerformanceCaveat: true,
-            },
-            loadingScreen: {
-              showLoadingScreen: true,
-              loadingScreenBackgroundColor: '#231F20',
-              loadingScreenProgressBarColor: '#FFFFFF',
-            },
-            onProgress: (progress: number) => {
-              const progressBar = document.querySelector('#unity-progress-bar-full');
-              if (progressBar instanceof HTMLElement) {
-                progressBar.style.width = `${100 * progress}%`;
-              }
-            }
-          };
+          if (!isMounted || !containerRef.current) return;
 
-          (window as any).createUnityInstance(document.querySelector('#unity-canvas'), config).then((instance: any) => {
-            if (!isMounted) return;
+          // @ts-ignore - Unity global will be available after loader loads
+          if (window.createUnityInstance) {
+            const canvasElement = containerRef.current.querySelector('canvas');
+            if (!canvasElement) {
+              setError('Canvas element not found.');
+              setIsLoading(false);
+              return;
+            }
             
-            setUnityInstance(instance);
-            setIsLoading(false);
+            const config = {
+              dataUrl: dataUrl,
+              frameworkUrl: frameworkUrl,
+              codeUrl: wasmUrl,
+              streamingAssetsUrl: 'StreamingAssets',
+              companyName: gameCompany,
+              productName: gameName,
+              productVersion: gameVersion,
+              showBanner: (msg: string, type: string) => {
+                if (type === 'error') {
+                  setError(msg);
+                  setIsLoading(false);
+                }
+              },
+              devicePixelRatio: window.devicePixelRatio || 1,
+              matchWebGLToCanvasSize: true,
+              webglContextAttributes: {
+                preserveDrawingBuffer: true,
+                powerPreference: 'high-performance',
+              },
+            };
 
-            const loadingBar = document.querySelector('#unity-loading-bar');
-            if (loadingBar instanceof HTMLElement) {
-              loadingBar.style.display = 'none';
-            }
-
-            const unityCanvas = document.querySelector('#unity-canvas') as HTMLCanvasElement;
-            if (unityCanvas) {
-              unityCanvas.style.pointerEvents = 'auto';
-            }
-          }).catch((message: string) => {
-            if (!isMounted) return;
-            console.error(message);
-            setError(`Failed to load game: ${message}`);
-            setIsLoading(false);
-          });
+            // @ts-ignore
+            window.createUnityInstance(canvasElement, config)
+              .then((instance: any) => {
+                if (!isMounted) return;
+                unityInstanceRef.current = instance;
+                setIsLoading(false);
+              })
+              .catch((err: Error) => {
+                if (!isMounted) return;
+                console.error('Unity instance creation failed:', err);
+                setError('Failed to load game. Please check the R2 configuration.');
+                setIsLoading(false);
+              });
+          }
         };
 
         script.onerror = () => {
           if (!isMounted) return;
-          setError('Failed to load game files. Please try reloading.');
+          setError('Failed to load Unity game files from R2. Please check your configuration.');
           setIsLoading(false);
         };
 
         document.body.appendChild(script);
 
+        // Cleanup
         return () => {
           isMounted = false;
-          if (unityInstance) {
+          if (unityInstanceRef.current && typeof unityInstanceRef.current.Quit === 'function') {
             try {
-              unityInstance.Quit();
-              setUnityInstance(null);
+              unityInstanceRef.current.Quit();
             } catch (e) {
-              console.error(e);
+              console.warn('Error quitting Unity instance:', e);
             }
           }
-          if (container) {
-            container.innerHTML = '';
+          
+          if (scriptRef.current && scriptRef.current.parentNode) {
+            scriptRef.current.parentNode.removeChild(scriptRef.current);
+            scriptRef.current = null;
           }
-          style.remove();
-          URL.revokeObjectURL(loaderUrl);
-          URL.revokeObjectURL(dataUrl);
-          URL.revokeObjectURL(frameworkUrl);
-          URL.revokeObjectURL(wasmUrl);
         };
-      } catch (error) {
-        console.error(error);
-        setError('Failed to load game files');
+      } catch (err) {
+        console.error('Error loading Unity game:', err);
+        setError('Failed to initialize game.');
         setIsLoading(false);
       }
     };
 
-    loadUnity();
+    if (showGame) {
+      loadUnity();
+    }
 
+    // Cleanup on unmount
     return () => {
-      if (unityInstance) {
-        unityInstance.Quit();
+      if (unityInstanceRef.current && typeof unityInstanceRef.current.Quit === 'function') {
+        try {
+          unityInstanceRef.current.Quit();
+        } catch (e) {
+          console.warn('Error quitting Unity instance:', e);
+        }
       }
     };
-  }, [buildUrl, width, height, gameName, gameVersion, gameCompany, showGame]);
+  }, [showGame, gameName, r2Name, gameVersion, gameCompany, iframeUrl]);
 
   const reloadGame = () => {
     setError(null);
-    setIsLoading(false);
     setShowGame(false);
-    if (unityInstance) {
-      unityInstance.Quit();
-      setUnityInstance(null);
+    if (unityInstanceRef.current) {
+      try {
+        unityInstanceRef.current.Quit();
+      } catch (e) {
+        console.warn('Error quitting Unity instance:', e);
+      }
+      unityInstanceRef.current = null;
     }
     if (containerRef.current) {
       containerRef.current.innerHTML = '';
     }
+    setTimeout(() => {
+      setShowGame(true);
+      setIsLoading(true);
+    }, 100);
+  };
+
+  const toggleFullscreen = () => {
+    if (!gameContainerRef.current) return;
+    
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      gameContainerRef.current.requestFullscreen();
+    }
   };
 
   return (
-    <div className="relative bg-transparent group">
-      {error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-10">
-          <div className="bg-red-500 text-white p-6 rounded-lg text-center">
-            <p className="mb-4">{error}</p>
-            <button
-              onClick={reloadGame}
-              className="bg-white text-red-500 px-4 py-2 rounded hover:bg-gray-100 transition-colors"
-            >
-              Reload Game
-            </button>
-          </div>
-        </div>
-      )}
-      {!showGame ? (
-        <div className="flex items-center justify-center h-full w-full absolute inset-0 bg-transparent">
-          <button
-            onClick={() => {
-              if (!isLoading) {
-                setShowGame(true);
-                setIsLoading(true);
-              }
+    <div className="w-full h-full">
+      <div 
+        ref={gameContainerRef}
+        className="relative bg-transparent rounded-lg overflow-hidden w-full h-full"
+        style={{ 
+          width, 
+          height,
+        }}
+      >
+        {iframeUrl ? (
+          <iframe
+            src={iframeUrl}
+            className="w-full h-full border-none"
+            allow="fullscreen"
+            title={gameName}
+            onLoad={() => setIsLoading(false)}
+            onError={() => {
+              setError('Failed to load game iframe.');
+              setIsLoading(false);
             }}
-            disabled={isLoading}
-            className={`bg-[#ff8a2c] text-white px-8 py-4 rounded-lg transition-all transform font-press-start text-lg tracking-wider border-2 border-[#ff9a3c] [text-shadow:_2px_2px_0_rgb(0_0_0_/_40%)] ${
-              isLoading 
-                ? 'opacity-50 cursor-not-allowed' 
-                : 'hover:bg-[#ff7a1c] hover:scale-105 shadow-[0_4px_0_#ff6a1c] hover:shadow-[0_6px_0_#ff6a1c] hover:-translate-y-1'
-            }`}
-          >
-            {isLoading ? 'LOADING...' : 'START GAME'}
-          </button>
-        </div>
-      ) : (
-        <div className="relative">
-          <div ref={containerRef} className="unity-container" />
-          <div className="flex justify-end absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4 pointer-events-none">
+          />
+        ) : !showGame ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-transparent">
             <button
               onClick={() => {
-                const container = containerRef.current;
-                if (!container) return;
-                if (document.fullscreenElement) {
-                  document.exitFullscreen();
-                } else {
-                  container.requestFullscreen();
-                }
+                setShowGame(true);
+                setIsLoading(true);
               }}
-              className="text-white/50 hover:text-white hover:scale-110 transition-all pointer-events-auto bg-black/50 p-2 rounded-lg backdrop-blur-sm"
-              aria-label="Toggle fullscreen"
+              disabled={isLoading}
+              className={`
+                relative
+                bg-[#ff8a2c] 
+                text-white 
+                px-8 py-4 md:px-12 md:py-6 
+                rounded-lg 
+                transition-all 
+                transform 
+                text-lg md:text-2xl
+                tracking-wider 
+                border-4 
+                border-[#ff6a1c]
+                shadow-[0_8px_0_#ff5a0c]
+                hover:shadow-[0_4px_0_#ff5a0c]
+                hover:-translate-y-1
+                active:translate-y-0
+                active:shadow-[0_2px_0_#ff5a0c]
+                font-press-start
+                ${isLoading 
+                  ? 'opacity-50 cursor-not-allowed' 
+                  : 'hover:bg-[#ff7a1c] hover:scale-105'
+                }
+              `}
+              style={{
+                textShadow: '3px 3px 0px rgba(0,0,0,0.5), 6px 6px 0px rgba(0,0,0,0.3)',
+              }}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
-              </svg>
+              {isLoading ? 'LOADING...' : 'START GAME'}
             </button>
           </div>
-        </div>
-      )}
+        ) : (
+          <>
+            <div ref={containerRef} className="w-full h-full" />
+            {/* Game Control Bar */}
+            <div className="absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur-sm border-t border-gray-700 px-4 py-2 flex items-center justify-end z-20 opacity-0 hover:opacity-100 transition-opacity duration-300">
+              <button
+                onClick={toggleFullscreen}
+                className="text-white/80 hover:text-white hover:scale-110 transition-all p-2 rounded-lg hover:bg-white/10"
+                aria-label="Toggle fullscreen"
+                title="Toggle fullscreen (ESC to exit)"
+              >
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  width="24" 
+                  height="24" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                >
+                  {isFullscreen ? (
+                    <>
+                      <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>
+                    </>
+                  ) : (
+                    <>
+                      <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+                    </>
+                  )}
+                </svg>
+              </button>
+            </div>
+          </>
+        )}
+        
+        {isLoading && showGame && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black z-10">
+            <div className="text-center mb-8">
+              <p className="text-white text-xl mb-6 font-press-start tracking-widest" style={{
+                textShadow: '2px 2px 0px rgba(0,0,0,0.8)',
+              }}>
+                LOADING...
+              </p>
+              
+              {/* Retro Loading Bar - Block Style (Battery Indicator) */}
+              <div className="relative mx-auto" style={{ width: '80%', maxWidth: '400px', height: '40px' }}>
+                {/* Outer border */}
+                <div 
+                  className="absolute inset-0 border-2 border-white"
+                  style={{
+                    imageRendering: 'pixelated' as any,
+                  }}
+                ></div>
+                
+                {/* Block container - fixed 20 blocks, light up from left to right */}
+                <div className="absolute inset-0 flex" style={{ padding: '4px', gap: '2px' }}>
+                  {Array.from({ length: 20 }, (_, i) => {
+                    // Each block is 5% (100% / 20 = 5% per block)
+                    // Block lights up when progress reaches its threshold
+                    const blockThreshold = (i + 1) * 0.05;
+                    const isLit = loadingProgress >= blockThreshold;
+                    
+                    return (
+                      <div
+                        key={i}
+                        className="flex-1"
+                        style={{
+                          imageRendering: 'pixelated' as any,
+                          backgroundColor: isLit ? 'white' : 'transparent',
+                        }}
+                      ></div>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              <p className="text-white text-sm mt-4 font-press-start" style={{
+                fontSize: '10px',
+              }}>
+                {Math.round(loadingProgress * 100)}%
+              </p>
+            </div>
+          </div>
+        )}
+        {error && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-900 z-10">
+            <div className="text-center text-white p-4">
+              <p className="text-red-400 mb-4">⚠️ {error}</p>
+              <button
+                onClick={reloadGame}
+                className="bg-white text-gray-900 px-4 py-2 rounded hover:bg-gray-100 transition-colors"
+              >
+                Reload Game
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
